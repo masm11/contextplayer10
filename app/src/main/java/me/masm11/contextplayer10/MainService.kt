@@ -7,14 +7,13 @@ import android.os.Bundle
 import android.os.IBinder
 
 import kotlinx.coroutines.*
-import android.media.MediaPlayer
 import android.media.AudioManager
 import android.net.Uri
 import java.io.File
 
 class MainService : Service() {
-    private var mediaPlayer: MediaPlayer? = null
     private var audioManager: AudioManager? = null
+    private val player = Player(this)
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
     
     override fun onCreate() {
@@ -27,20 +26,7 @@ class MainService : Service() {
     
     inner class Binder: android.os.Binder() {
 	suspend fun play() {
-	    val uri = Uri.fromFile(File("/sdcard/Music/nainai/bgm/nainai_bgm2_m00.ogg"))
-	    scope.launch {
-		withContext(Dispatchers.IO) {
-		    val mp = MediaPlayer.create(this@MainService, uri)
-		    Log.d("mp=${mp}")
-		    if (mp != null) {
-			Log.d("mp is not null")
-			Log.d("start")
-			mp.start()
-			Log.d("started")
-		    }
-		    mediaPlayer = mp
-		}
-	    }
+	    player.play(MFile("//primary/nainai/bgm/nainai_bgm2_m00.ogg"))
 	}
     }
     
