@@ -1,5 +1,8 @@
 #!/usr/bin/env sh
 
+JAVA_HOME=/opt/android-studio/jre
+export JAVA_HOME
+
 ##############################################################################
 ##
 ##  Gradle start up script for UN*X
