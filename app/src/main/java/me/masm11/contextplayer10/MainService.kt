@@ -26,7 +26,7 @@ class MainService : Service() {
     
     inner class Binder: android.os.Binder() {
 	suspend fun play() {
-	    player.play(MFile("//primary/nainai/bgm/nainai_bgm2_m00.ogg"))
+	    player.play(MFile("//primary/nana/impact_exciter/nana_ie_01.ogg"))
 	}
     }
     

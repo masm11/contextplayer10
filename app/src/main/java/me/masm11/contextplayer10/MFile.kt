@@ -17,6 +17,7 @@
 package me.masm11.contextplayer10
 
 import java.io.File
+import java.util.Locale
 
 import android.os.Environment
 import android.content.Context
@@ -49,6 +50,128 @@ class MFile(val path: String) {
 		    }
 		}
 	    }
+	}
+
+	suspend fun selectNext(mNextOf: MFile?, mTopDir: MFile): MFile? {	// m means MFile, not member.
+	    if (mNextOf == null)
+		return null;
+	    val nextOf = mNextOf.toString()
+	    val topDir = mTopDir.toString()
+	    Log.d("nextOf=${nextOf}")
+	    var found: String? = null
+	    if (nextOf.startsWith(topDir)) {
+		if (topDir != "//") {
+		    //                           +1: for '/'   ↓
+		    val parts = nextOf.substring(topDir.length + 1).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+		    found = lookForFile(MFile(topDir), parts, 0, false)
+		} else {
+		    val parts = nextOf.substring(2).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+		    found = lookForFile(MFile(topDir), parts, 0, false)
+		}
+	    }
+	    if (found == null)
+		found = lookForFile(MFile(topDir), null, 0, false)
+	    Log.d("found=${found}")
+	    return if (found != null) MFile(found) else null
+	}
+
+	suspend fun selectPrev(mPrevOf: MFile?, mTopDir: MFile): MFile? {
+	    if (mPrevOf == null)
+		return null;
+	    val prevOf = mPrevOf.toString()
+	    val topDir = mTopDir.toString()
+	    Log.d("prevOf=${prevOf}")
+	    var found: String? = null
+	    if (prevOf.startsWith(topDir)) {
+		if (topDir != "//") {
+		    //                            +1: for '/'  ↓
+		    val parts = prevOf.substring(topDir.length + 1).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+		    found = lookForFile(MFile(topDir), parts, 0, true)
+		} else {
+		    val parts = prevOf.substring(2).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+		    found = lookForFile(MFile(topDir), parts, 0, true)
+		}
+	    }
+	    if (found == null)
+		found = lookForFile(MFile(topDir), null, 0, true)
+	    Log.d("found=${found}")
+	    return if (found != null) MFile(found) else null
+	}
+
+	/* 次のファイルを探す。
+	*   dir: 今見ているディレクトリ
+	*   parts[]: topdir からの相対 path。'/' で区切られている。
+	*   parts_idx: ディレクトリの nest。
+	*   backward: 逆向き検索。
+	* 最初にこのメソッドに来る時、nextOf は、
+	*   /dir/parts[0]/parts[1]/…/parts[N]
+	* だったことになる。
+	* lookForFile() の役割は、dir 内 subdir も含めて、nextOf の次のファイルを探すこと。
+	* parts == null の場合、nextOf の path tree から外れた場所を探している。
+	*/
+	suspend private fun lookForFile(dir: MFile, parts: Array<String>?, parts_idx: Int, backward: Boolean): String? {
+	    var cur: String? = null
+	    if (parts != null) {
+		if (parts_idx < parts.size)
+		    cur = parts[parts_idx]
+	    }
+
+	    val files = Player.listFiles(dir, backward)
+
+	    for (file in files) {
+		if (cur == null) {
+		    if (file.isDirectory) {
+			val r = lookForFile(file, null, parts_idx + 1, backward)
+			if (r != null)
+			    return r
+		    } else {
+			return file.absolutePath
+		    }
+		} else {
+		    val compare = comparePath(file.name, cur)
+		    if (compare == 0) {
+			// 今そこ。
+			if (file.isDirectory) {
+			    val r = lookForFile(file, parts, parts_idx + 1, backward)
+			    if (r != null)
+				return r
+			} else {
+			    // これは今再生中。
+			}
+		    } else if (!backward && compare > 0) {
+			if (file.isDirectory) {
+			    // 次を探していたら dir だった
+			    val r = lookForFile(file, null, parts_idx + 1, backward)
+			    if (r != null)
+				return r
+			} else {
+			    // 次のファイルを見つけた
+			    return file.absolutePath
+			}
+		    } else if (backward && compare < 0) {
+			if (file.isDirectory) {
+			    // 次を探していたら dir だった
+			    val r = lookForFile(file, null, parts_idx + 1, backward)
+			    if (r != null)
+				return r
+			} else {
+			    // 次のファイルを見つけた
+			    return file.absolutePath
+			}
+		    }
+		}
+	    }
+	    
+	    return null
+	}
+	
+	private fun comparePath(p1: String, p2: String): Int {
+	    val l1 = p1.toLowerCase(Locale.getDefault())
+	    val l2 = p2.toLowerCase(Locale.getDefault())
+	    var r = l1.compareTo(l2)
+	    if (r == 0)
+		r = p1.compareTo(p2)
+	    return r
 	}
     }
 
