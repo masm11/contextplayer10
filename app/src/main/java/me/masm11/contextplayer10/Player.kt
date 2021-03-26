@@ -18,21 +18,36 @@ class Player(val context: Context, val scope: CoroutineScope) {
     private var currentMFile: MFile? = null
     private var nextMFile: MFile? = null
     
-    suspend fun play(file: MFile) {
+    suspend fun play() {
 	withContext(Dispatchers.IO) {
-	    val mp = createMediaPlayer(file)
+	    var mp = currentMediaPlayer
+	    if (mp == null) {
+		val file = MFile("//primary/nana/impact_exciter/nana_ie_01.ogg")
+		mp = createMediaPlayer(file)
+		currentMediaPlayer = mp
+		currentMFile = file
+	    }
 	    if (mp != null) {
 		mp.start()
 		Log.d("started")
-		currentMediaPlayer = mp
-		currentMFile = file
 	    }
 	}
 	
 	enqueueNextMediaPlayer()
     }
     
+    suspend fun stop() {
+	val mp = currentMediaPlayer
+	if (mp != null) {
+	    mp.pause()
+	    Log.d("paused")
+	}
+	
+	dequeueNextMediaPlayer()
+    }
+    
     suspend private fun enqueueNextMediaPlayer() {
+	Log.d("enqueue")
 	val currMFile = currentMFile
 	
 	nextMediaPlayer = null
@@ -62,6 +77,16 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	}
     }
     
+    suspend private fun dequeueNextMediaPlayer() {
+	Log.d("dequeue")
+	val mp = nextMediaPlayer
+	if (mp != null) {
+	    mp.release()
+	    nextMediaPlayer = null
+	    nextMFile = null
+	}
+    }
+
     suspend private fun createMediaPlayer(file: MFile): MediaPlayer? {
 	return withContext(Dispatchers.IO) {
 	    val uri = Uri.fromFile(file.file)
@@ -69,6 +94,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	    Log.d("mp=${mp}")
 	    if (mp != null) {
 		mp.setOnCompletionListener { p ->
+		    Log.d("completed ${p}")
 		    scope.launch {
 			handleCompletion(p)
 		    }

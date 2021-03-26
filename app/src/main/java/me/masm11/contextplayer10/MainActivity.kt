@@ -37,6 +37,16 @@ class MainActivity: AppCompatActivity() {
 		}
 	    }
 	}
+
+	val btn_stop: Button = findViewById(R.id.button_stop)
+	btn_stop.setOnClickListener {
+	    val b = binder
+	    if (b != null) {
+		scope.launch {
+		    b.stop()
+		}
+	    }
+	}
     }
     
     override fun onStart() {
