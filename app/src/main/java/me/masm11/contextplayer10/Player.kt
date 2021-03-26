@@ -12,44 +12,85 @@ import java.util.Locale
 import java.util.Collections
 import java.util.Arrays
 
-class Player(val context: Context) {
-    private var mediaPlayer: MediaPlayer? = null
+class Player(val context: Context, val scope: CoroutineScope) {
+    private var currentMediaPlayer: MediaPlayer? = null
     private var nextMediaPlayer: MediaPlayer? = null
+    private var currentMFile: MFile? = null
+    private var nextMFile: MFile? = null
     
     suspend fun play(file: MFile) {
 	withContext(Dispatchers.IO) {
+	    val mp = createMediaPlayer(file)
+	    if (mp != null) {
+		mp.start()
+		Log.d("started")
+		currentMediaPlayer = mp
+		currentMFile = file
+	    }
+	}
+	
+	enqueueNextMediaPlayer()
+    }
+    
+    suspend fun enqueueNextMediaPlayer() {
+	val currMFile = currentMFile
+	
+	nextMediaPlayer = null
+	nextMFile = null
+	
+	withContext(Dispatchers.IO) {
+	    var next = currMFile
+	    while (true) {
+		next = MFile.selectNext(next, MFile("//"))		// fixme: topDir
+		Log.d("next=${next}")
+		if (next == null)
+		    break
+		
+		val mp = createMediaPlayer(next)
+		if (mp == null)
+		    continue
+		
+		val currPlayer = currentMediaPlayer
+		if (currPlayer == null)
+		    break
+		
+		currPlayer.setNextMediaPlayer(mp)
+		nextMediaPlayer = mp
+		nextMFile = next
+		break
+	    }
+	}
+    }
+    
+    suspend fun createMediaPlayer(file: MFile): MediaPlayer? {
+	return withContext(Dispatchers.IO) {
 	    val uri = Uri.fromFile(file.file)
 	    val mp = MediaPlayer.create(context, uri)
 	    Log.d("mp=${mp}")
 	    if (mp != null) {
-		Log.d("mp is not null")
-		Log.d("start")
-		mp.start()
-		Log.d("started")
-	    }
-	    mediaPlayer = mp
-	}
-	
-	withContext(Dispatchers.IO) {
-	    val nextMFile = MFile.selectNext(file, MFile("//"))
-	    Log.d("nextMFile=${nextMFile}")
-	    if (nextMFile != null) {
-		val uri = Uri.fromFile(nextMFile.file)
-		val mp = MediaPlayer.create(context, uri)
-		Log.d("mp=${mp}")
-		if (mp != null) {
-		    Log.d("mp is not null")
-		    Log.d("set next")
-		    val prim = mediaPlayer
-		    if (prim != null) {
-			prim.setNextMediaPlayer(mp)
-			Log.d("set next done")
+		mp.setOnCompletionListener { p ->
+		    scope.launch {
+			handleCompletion(p)
 		    }
 		}
-		nextMediaPlayer = mp
 	    }
+	    mp
 	}
     }
+    
+    suspend fun handleCompletion(mp: MediaPlayer) {
+	mp.release()
+	
+	if (mp != currentMediaPlayer)
+	    return
+	
+	currentMediaPlayer = nextMediaPlayer
+	currentMFile = nextMFile
+	
+	enqueueNextMediaPlayer()
+    }
+
+
 
     companion object {
 	/* dir に含まれるファイル名をリストアップする。

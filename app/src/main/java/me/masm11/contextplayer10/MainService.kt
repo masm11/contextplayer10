@@ -13,8 +13,8 @@ import java.io.File
 
 class MainService : Service() {
     private var audioManager: AudioManager? = null
-    private val player = Player(this)
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
+    private val player = Player(this, scope)
     
     override fun onCreate() {
         super.onCreate()
