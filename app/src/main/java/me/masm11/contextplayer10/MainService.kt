@@ -17,7 +17,10 @@ class MainService : Service() {
     private val player = Player(this, scope)
     
     override fun onCreate() {
-        super.onCreate()
+	scope.launch {
+	    player.jumpTo(MFile("//primary/nana/impact_exciter/nana_ie_01.ogg"), 20000)
+	}
+	super.onCreate()
     }
     
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {

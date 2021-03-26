@@ -18,15 +18,29 @@ class Player(val context: Context, val scope: CoroutineScope) {
     private var currentMFile: MFile? = null
     private var nextMFile: MFile? = null
     
+    suspend fun jumpTo(file: MFile, msec: Long) {
+	var mFile: MFile? = file
+	withContext(Dispatchers.IO) {
+	    while (true) {
+		val f = mFile
+		if (f == null)
+		    break
+		val mp = createMediaPlayer(f)
+		if (mp != null) {
+		    mp.seekTo(msec.toInt())
+		    currentMediaPlayer = mp
+		    currentMFile = mFile
+		    break
+		}
+		
+		mFile = MFile.selectNext(f, MFile("//"))		// fixme: topDir
+	    }
+	}
+    }
+    
     suspend fun play() {
 	withContext(Dispatchers.IO) {
 	    var mp = currentMediaPlayer
-	    if (mp == null) {
-		val file = MFile("//primary/nana/impact_exciter/nana_ie_01.ogg")
-		mp = createMediaPlayer(file)
-		currentMediaPlayer = mp
-		currentMFile = file
-	    }
 	    if (mp != null) {
 		mp.start()
 		Log.d("started")
