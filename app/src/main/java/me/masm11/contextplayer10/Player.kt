@@ -32,7 +32,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	enqueueNextMediaPlayer()
     }
     
-    suspend fun enqueueNextMediaPlayer() {
+    suspend private fun enqueueNextMediaPlayer() {
 	val currMFile = currentMFile
 	
 	nextMediaPlayer = null
@@ -62,7 +62,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	}
     }
     
-    suspend fun createMediaPlayer(file: MFile): MediaPlayer? {
+    suspend private fun createMediaPlayer(file: MFile): MediaPlayer? {
 	return withContext(Dispatchers.IO) {
 	    val uri = Uri.fromFile(file.file)
 	    val mp = MediaPlayer.create(context, uri)
@@ -78,7 +78,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	}
     }
     
-    suspend fun handleCompletion(mp: MediaPlayer) {
+    suspend private fun handleCompletion(mp: MediaPlayer) {
 	mp.release()
 	
 	if (mp != currentMediaPlayer)
