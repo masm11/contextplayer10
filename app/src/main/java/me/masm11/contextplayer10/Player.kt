@@ -13,10 +13,17 @@ import java.util.Collections
 import java.util.Arrays
 
 class Player(val context: Context, val scope: CoroutineScope) {
+    private var topDir = MFile.ROOT
     private var currentMediaPlayer: MediaPlayer? = null
     private var nextMediaPlayer: MediaPlayer? = null
     private var currentMFile: MFile? = null
     private var nextMFile: MFile? = null
+    
+    suspend fun setTopDir(dir: MFile) {
+	topDir = dir
+	// 次の曲が変わるかもしれないので、enqueue しなおす
+	reenqueueNextMediaPlayer();
+    }
     
     suspend fun jumpTo(file: MFile, msec: Long) {
 	var mFile: MFile? = file
@@ -33,7 +40,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
 		    break
 		}
 		
-		mFile = MFile.selectNext(f, MFile("//"))		// fixme: topDir
+		mFile = MFile.selectNext(f, topDir)
 	    }
 	}
     }
@@ -60,6 +67,11 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	dequeueNextMediaPlayer()
     }
     
+    suspend private fun reenqueueNextMediaPlayer() {
+	dequeueNextMediaPlayer()
+	enqueueNextMediaPlayer()
+    }
+    
     suspend private fun enqueueNextMediaPlayer() {
 	Log.d("enqueue")
 	val currMFile = currentMFile
@@ -70,7 +82,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	withContext(Dispatchers.IO) {
 	    var next = currMFile
 	    while (true) {
-		next = MFile.selectNext(next, MFile("//"))		// fixme: topDir
+		next = MFile.selectNext(next, topDir)
 		Log.d("next=${next}")
 		if (next == null)
 		    break

@@ -18,7 +18,8 @@ class MainService : Service() {
     
     override fun onCreate() {
 	scope.launch {
-	    player.jumpTo(MFile("//primary/nana/impact_exciter/nana_ie_01.ogg"), 20000)
+	    player.setTopDir(MFile("//primary/nana/impact_exciter/"))
+	    player.jumpTo(MFile("//primary/nana/impact_exciter/nana_ie_16.ogg"), 200000)
 	}
 	super.onCreate()
     }

@@ -27,6 +27,8 @@ class MFile(val path: String) {
     constructor(file: File) : this(file.toString())
 
     companion object {
+	val ROOT = MFile("//")
+	
 	val mapping: HashMap<String, String> = HashMap()
 	fun initMapping() {
 	    if (mapping.size == 0) {
