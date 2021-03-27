@@ -39,15 +39,33 @@ class MainService : Service() {
 	}
     }.build()
     private val player = Player(this, scope, audioAttributes)
+    private lateinit var playingContextUuid: String
+    private lateinit var playingContext: PlayContext
     
     override fun onCreate() {
 	super.onCreate()
 	
+	PlayContextStore.load(this)
+	
+	playingContextUuid = PlayContextStore.getPlayingUuid()
+	playingContext = PlayContextStore.find(playingContextUuid)
+	
 	player.initialize()
 	
 	scope.launch {
+/*
 	    player.setTopDir(MFile("//primary/nana/impact_exciter/"))
 	    player.jumpTo(MFile("//primary/nana/impact_exciter/nana_ie_16.ogg"), 200000)
+*/
+	    if (playingContext.path == null) {
+		playingContext.topDir = "//primary/nana/impact_exciter"
+		playingContext.path = "//primary/nana/impact_exciter/nana_ie_16.ogg"
+		PlayContextStore.save()
+	    }
+	    player.setTopDir(MFile(playingContext.topDir))
+	    var path = playingContext.path
+	    if (path != null)
+		player.jumpTo(MFile(path), playingContext.msec)
 	}
 	
 	audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
@@ -78,6 +96,14 @@ class MainService : Service() {
 	    while (true) {
 		scope.launch {
 		    val playStatus = player.getPlayStatus()
+		    
+		    if (playStatus.file != null) {
+			playingContext.topDir = playStatus.topDir.toString()
+			playingContext.path = playStatus.file.toString()
+			playingContext.msec = playStatus.msec
+			PlayContextStore.save()
+		    }
+
 		    try {
 			onPlayStatusBroadcastListeners.forEach { listener, _ ->
 			    scope.launch {
