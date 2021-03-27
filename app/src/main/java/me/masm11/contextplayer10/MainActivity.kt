@@ -41,6 +41,9 @@ class MainActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 	
+	val intent = Intent(this, MainService::class.java)
+	startService(intent)
+	
 	val btn: Button = findViewById(R.id.button)
 	btn.setOnClickListener {
 	    val b = binder
@@ -50,7 +53,7 @@ class MainActivity: AppCompatActivity() {
 		}
 	    }
 	}
-
+	
 	val btn_stop: Button = findViewById(R.id.button_stop)
 	btn_stop.setOnClickListener {
 	    val b = binder

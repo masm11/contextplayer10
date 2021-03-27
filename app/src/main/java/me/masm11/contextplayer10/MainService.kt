@@ -5,6 +5,9 @@ import android.app.Service
 import android.content.Intent
 import android.os.Bundle
 import android.os.IBinder
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import androidx.core.app.NotificationCompat
 
 import java.util.WeakHashMap
 
@@ -75,10 +78,10 @@ class MainService : Service() {
     
     inner class Binder: android.os.Binder() {
 	suspend fun play() {
-	    player.play()
+	    handlePlay()
 	}
 	suspend fun stop() {
-	    player.stop()
+	    handleStop()
 	}
 	fun setOnPlayStatusBroadcastedListener(listener: OnPlayStatusBroadcastListener) {
 	    onPlayStatusBroadcastListeners.put(listener, true)
@@ -88,4 +91,38 @@ class MainService : Service() {
     override fun onBind(intent: Intent): IBinder? {
 	return Binder()
     }
+    
+    suspend private fun handlePlay() {
+	player.play()
+	enterForeground()
+    }
+    
+    suspend private fun handleStop() {
+	leaveForeground()
+	player.stop()
+    }
+    
+    private fun enterForeground() {
+	val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+	val id = "playing"
+	val name = "再生中"
+	
+	if (manager.getNotificationChannel(id) == null) {
+	    val channel = NotificationChannel(id, name, NotificationManager.IMPORTANCE_LOW)
+	    manager.createNotificationChannel(channel)
+	}
+	
+	val notification = NotificationCompat.Builder(this, id).apply {
+	    setContentTitle("再生中")
+	    setContentText("Playing...")
+	    setSmallIcon(R.drawable.ic_launcher_background)
+	}.build()
+	
+	startForeground(1, notification)
+    }
+    
+    private fun leaveForeground() {
+	stopForeground(true)
+    }
+    
 }
