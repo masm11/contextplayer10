@@ -5,6 +5,7 @@ import kotlinx.coroutines.*
 import android.content.Context
 import android.media.MediaPlayer
 import android.media.AudioManager
+import android.media.AudioAttributes
 import android.net.Uri
 
 import java.io.File
@@ -12,12 +13,20 @@ import java.util.Locale
 import java.util.Collections
 import java.util.Arrays
 
-class Player(val context: Context, val scope: CoroutineScope) {
+class Player(val context: Context, val scope: CoroutineScope, val audioAttributes: AudioAttributes) {
     private var topDir = MFile("//")
     private var currentMediaPlayer: MediaPlayer? = null
     private var nextMediaPlayer: MediaPlayer? = null
     private var currentMFile: MFile? = null
     private var nextMFile: MFile? = null
+    
+    private var audioSessionId: Int = 0
+    private var volume: Double = 1.0
+    
+    fun initialize() {
+	val manager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+	audioSessionId = manager.generateAudioSessionId()
+    }
     
     suspend fun setTopDir(dir: MFile) {
 	topDir = dir
@@ -67,6 +76,17 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	dequeueNextMediaPlayer()
     }
     
+    suspend fun setVolume(volume: Double) {
+	var v = volume
+	if (v < 0.0)
+	    v = 0.0
+	if (v > 1.0)
+	    v = 1.0
+	this.volume = v
+	
+	changeVolume()
+    }
+    
     data class PlayStatus(val topDir: MFile, val file: MFile?, val duration: Long, val msec: Long)
     
     suspend fun getPlayStatus(): PlayStatus {
@@ -78,6 +98,23 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	    msec = mp.getCurrentPosition().toLong()
 	}
 	return PlayStatus(topDir, currentMFile, duration, msec)
+    }
+    
+    private fun calcVolume(): Double {
+	var vol = volume
+	return vol
+    }
+    
+    suspend private fun changeVolume() {
+	val vol = calcVolume()
+	withContext(Dispatchers.IO) {
+	    var mp = currentMediaPlayer
+	    if (mp != null)
+		mp.setVolume(vol.toFloat(), vol.toFloat())
+	    mp = nextMediaPlayer
+	    if (mp != null)
+		mp.setVolume(vol.toFloat(), vol.toFloat())
+	}
     }
     
     suspend private fun reenqueueNextMediaPlayer() {
@@ -129,7 +166,7 @@ class Player(val context: Context, val scope: CoroutineScope) {
     suspend private fun createMediaPlayer(file: MFile): MediaPlayer? {
 	return withContext(Dispatchers.IO) {
 	    val uri = Uri.fromFile(file.file)
-	    val mp = MediaPlayer.create(context, uri)
+	    val mp = MediaPlayer.create(context, uri, null, audioAttributes, audioSessionId)
 	    Log.d("mp=${mp}")
 	    if (mp != null) {
 		mp.setOnCompletionListener { p ->
@@ -138,6 +175,8 @@ class Player(val context: Context, val scope: CoroutineScope) {
 			handleCompletion(p)
 		    }
 		}
+		val vol = calcVolume()
+		mp.setVolume(vol.toFloat(), vol.toFloat())
 	    }
 	    mp
 	}

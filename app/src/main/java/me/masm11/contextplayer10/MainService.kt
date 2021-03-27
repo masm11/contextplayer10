@@ -13,26 +13,50 @@ import java.util.WeakHashMap
 
 import kotlinx.coroutines.*
 import android.media.AudioManager
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
 import android.net.Uri
 import java.io.File
 
 class MainService : Service() {
-    private var audioManager: AudioManager? = null
+    private lateinit var audioManager: AudioManager
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
-    private val player = Player(this, scope)
+    private val audioAttributes = AudioAttributes.Builder().apply {
+	setUsage(AudioAttributes.USAGE_MEDIA)
+	setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+    }.build()
+    val audioFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).apply {
+	setAudioAttributes(audioAttributes)
+	// system handles duck.
+	// setWillPauseWhenDucked(false)
+	setOnAudioFocusChangeListener { focusChange ->
+	    Log.d("focusChange=${focusChange}")
+	    if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+		scope.launch {
+		    handleStop()
+		}
+	    }
+	}
+    }.build()
+    private val player = Player(this, scope, audioAttributes)
     
     override fun onCreate() {
 	super.onCreate()
+	
+	player.initialize()
 	
 	scope.launch {
 	    player.setTopDir(MFile("//primary/nana/impact_exciter/"))
 	    player.jumpTo(MFile("//primary/nana/impact_exciter/nana_ie_16.ogg"), 200000)
 	}
 	
+	audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+	
 	startBroadcaster()
     }
     
     override fun onDestroy() {
+	abandonAudioFocus()
 	stopBroadcaster()
 	scope.cancel()
 	super.onDestroy()
@@ -41,6 +65,7 @@ class MainService : Service() {
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
 	return START_STICKY
     }
+    
     
     interface OnPlayStatusBroadcastListener {
 	fun onPlayStatusBroadcastListener(playStatus: Player.PlayStatus)
@@ -76,6 +101,7 @@ class MainService : Service() {
 	broadcaster.join()
     }
     
+    
     inner class Binder: android.os.Binder() {
 	suspend fun play() {
 	    handlePlay()
@@ -92,15 +118,19 @@ class MainService : Service() {
 	return Binder()
     }
     
+    
     suspend private fun handlePlay() {
 	player.play()
 	enterForeground()
+	requestAudioFocus()
     }
     
     suspend private fun handleStop() {
+	abandonAudioFocus()
 	leaveForeground()
 	player.stop()
     }
+    
     
     private fun enterForeground() {
 	val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -125,4 +155,12 @@ class MainService : Service() {
 	stopForeground(true)
     }
     
+    
+    private fun requestAudioFocus() {
+	audioManager.requestAudioFocus(audioFocusRequest)
+    }
+    
+    private fun abandonAudioFocus() {
+	audioManager.abandonAudioFocusRequest(audioFocusRequest)
+    }
 }
