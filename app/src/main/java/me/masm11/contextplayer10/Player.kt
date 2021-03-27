@@ -13,7 +13,7 @@ import java.util.Collections
 import java.util.Arrays
 
 class Player(val context: Context, val scope: CoroutineScope) {
-    private var topDir = MFile.ROOT
+    private var topDir = MFile("//")
     private var currentMediaPlayer: MediaPlayer? = null
     private var nextMediaPlayer: MediaPlayer? = null
     private var currentMFile: MFile? = null
@@ -65,6 +65,19 @@ class Player(val context: Context, val scope: CoroutineScope) {
 	}
 	
 	dequeueNextMediaPlayer()
+    }
+    
+    data class PlayStatus(val topDir: MFile, val file: MFile?, val duration: Long, val msec: Long)
+    
+    suspend fun getPlayStatus(): PlayStatus {
+	val mp = currentMediaPlayer
+	var duration: Long = 0
+	var msec: Long = 0
+	if (mp != null) {
+	    duration = mp.getDuration().toLong()
+	    msec = mp.getCurrentPosition().toLong()
+	}
+	return PlayStatus(topDir, currentMFile, duration, msec)
     }
     
     suspend private fun reenqueueNextMediaPlayer() {
