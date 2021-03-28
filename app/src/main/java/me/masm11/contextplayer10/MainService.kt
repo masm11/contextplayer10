@@ -136,6 +136,9 @@ class MainService : Service() {
 	suspend fun stop() {
 	    handleStop()
 	}
+	suspend fun prev() {
+	    handlePrev()
+	}
 	suspend fun seek(msec: Long) {
 	    handleSeek(msec)
 	}
@@ -163,6 +166,10 @@ class MainService : Service() {
 	player.stop()
     }
     
+    suspend private fun handlePrev() {
+	player.gotoPrev()
+    }
+
     suspend private fun handleSeek(msec: Long) {
 	player.seekTo(msec)
     }

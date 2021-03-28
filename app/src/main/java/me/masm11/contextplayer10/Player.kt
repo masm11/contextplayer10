@@ -1,6 +1,8 @@
 package me.masm11.contextplayer10
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 import android.content.Context
 import android.media.MediaPlayer
@@ -14,6 +16,8 @@ import java.util.Collections
 import java.util.Arrays
 
 class Player(val context: Context, val scope: CoroutineScope, val audioAttributes: AudioAttributes) {
+    private val mutex = Mutex()
+    
     private var topDir = MFile("//")
     private var currentMediaPlayer: MediaPlayer? = null
     private var nextMediaPlayer: MediaPlayer? = null
@@ -76,6 +80,44 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	dequeueNextMediaPlayer()
     }
     
+    suspend fun gotoPrev() {
+	mutex.withLock {
+	    val mp_orig = currentMediaPlayer
+	    if (mp_orig != null && mp_orig.getCurrentPosition() >= 3_000) {
+		mp_orig.seekTo(0)
+		return
+	    }
+	    withContext(Dispatchers.IO) {
+		var curr = currentMFile
+		var playing = (mp_orig != null && mp_orig.isPlaying())
+		
+		while (true) {
+		    curr = MFile.selectPrev(curr, topDir)
+		    
+		    Log.d("curr=${curr}")
+		    if (curr == null)
+			break
+		    
+		    val mp = createMediaPlayer(curr)
+		    if (mp == null)
+			continue
+		    
+		    if (mp_orig != null) {
+			mp_orig.stop()
+			mp_orig.release()
+		    }
+		    
+		    if (playing)
+			mp.start()
+		    currentMediaPlayer = mp
+		    currentMFile = curr
+		    break
+		}
+	    }
+	}
+	enqueueNextMediaPlayer()
+    }
+
     suspend fun seekTo(msec: Long) {
 	val mp = currentMediaPlayer
 	if (mp != null) {
@@ -98,14 +140,16 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
     data class PlayStatus(val topDir: MFile, val file: MFile?, val duration: Long, val msec: Long)
     
     suspend fun getPlayStatus(): PlayStatus {
-	val mp = currentMediaPlayer
-	var duration: Long = 0
-	var msec: Long = 0
-	if (mp != null) {
-	    duration = mp.getDuration().toLong()
-	    msec = mp.getCurrentPosition().toLong()
+	mutex.withLock {
+	    val mp = currentMediaPlayer
+	    var duration: Long = 0
+	    var msec: Long = 0
+	    if (mp != null) {
+		duration = mp.getDuration().toLong()
+		msec = mp.getCurrentPosition().toLong()
+	    }
+	    return PlayStatus(topDir, currentMFile, duration, msec)
 	}
-	return PlayStatus(topDir, currentMFile, duration, msec)
     }
     
     private fun calcVolume(): Double {

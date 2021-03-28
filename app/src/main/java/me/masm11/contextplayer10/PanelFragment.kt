@@ -54,6 +54,17 @@ class PanelFragment: Fragment() {
 	return inflater.inflate(R.layout.panel_fragment, container, false)
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+	view.findViewById<Button>(R.id.button_prev).apply {
+	    setOnClickListener {
+		val b = binder
+		if (b != null) {
+		    scope.launch {
+			b.prev()
+		    }
+		}
+	    }
+	}
+	
 	view.findViewById<Button>(R.id.button_play).apply {
 	    setOnClickListener {
 		val b = binder
