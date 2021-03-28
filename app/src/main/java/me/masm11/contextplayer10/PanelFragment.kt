@@ -87,6 +87,17 @@ class PanelFragment: Fragment() {
 	    }
 	}
 	
+	view.findViewById<Button>(R.id.button_next).apply {
+	    setOnClickListener {
+		val b = binder
+		if (b != null) {
+		    scope.launch {
+			b.next()
+		    }
+		}
+	    }
+	}
+	
 	seekBar = view.findViewById<SeekBar>(R.id.seek_bar).apply {
 	    setOnSeekBarChangeListener(seekBarChangeListener)
 	}

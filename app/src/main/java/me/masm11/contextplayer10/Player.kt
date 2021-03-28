@@ -118,6 +118,40 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	enqueueNextMediaPlayer()
     }
 
+    suspend fun gotoNext() {
+	mutex.withLock {
+	    val mp_orig = currentMediaPlayer
+	    withContext(Dispatchers.IO) {
+		var curr = currentMFile
+		var playing = (mp_orig != null && mp_orig.isPlaying())
+		
+		while (true) {
+		    curr = MFile.selectNext(curr, topDir)
+		    
+		    Log.d("curr=${curr}")
+		    if (curr == null)
+			break
+		    
+		    val mp = createMediaPlayer(curr)
+		    if (mp == null)
+			continue
+		    
+		    if (mp_orig != null) {
+			mp_orig.stop()
+			mp_orig.release()
+		    }
+		    
+		    if (playing)
+			mp.start()
+		    currentMediaPlayer = mp
+		    currentMFile = curr
+		    break
+		}
+	    }
+	}
+	enqueueNextMediaPlayer()
+    }
+
     suspend fun seekTo(msec: Long) {
 	val mp = currentMediaPlayer
 	if (mp != null) {
