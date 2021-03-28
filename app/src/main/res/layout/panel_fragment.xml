@@ -5,11 +5,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <Space
+	android:id="@+id/left_of_times"
+	android:layout_width="0dp"
+	android:layout_height="wrap_content"
+	app:layout_constraintLeft_toLeftOf="parent"
+	app:layout_constraintRight_toLeftOf="@id/times"
+	app:layout_constraintHorizontal_weight="0" />
+
+    <TextView
+	android:id="@+id/times"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+        android:text="0:00/0:00"
+	app:layout_constraintTop_toTopOf="parent"
+	app:layout_constraintBottom_toTopOf="@id/seek_bar"
+	app:layout_constraintLeft_toRightOf="@id/left_of_times"
+	app:layout_constraintRight_toLeftOf="@id/right_of_times" />
+    
+    <Space
+	android:id="@+id/right_of_times"
+	android:layout_width="0dp"
+	android:layout_height="wrap_content"
+	app:layout_constraintLeft_toRightOf="@id/times"
+	app:layout_constraintRight_toRightOf="parent"
+	app:layout_constraintHorizontal_weight="1" />
+
     <SeekBar
 	android:id="@+id/seek_bar"
 	android:layout_width="match_parent"
 	android:layout_height="wrap_content"
-	app:layout_constraintTop_toTopOf="parent"
+	app:layout_constraintTop_toBottomOf="@id/times"
 	app:layout_constraintBottom_toTopOf="@id/button_prev"
 	app:layout_constraintLeft_toLeftOf="parent"
 	app:layout_constraintRight_toRightOf="parent" />

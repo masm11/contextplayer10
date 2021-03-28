@@ -1,6 +1,7 @@
 package me.masm11.contextplayer10
 
 import androidx.fragment.app.Fragment
+import androidx.constraintlayout.widget.ConstraintLayout
 import android.os.Bundle
 import android.os.IBinder
 import android.content.ComponentName
@@ -10,6 +11,7 @@ import android.content.ServiceConnection
 import android.widget.SeekBar
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Space
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,9 @@ class PanelFragment: Fragment() {
     private var binder: MainService.Binder? = null
     private var userSeeking = false
     private lateinit var seekBar: SeekBar
+    private lateinit var times: TextView
+    private lateinit var left_of_times: Space
+    private lateinit var right_of_times: Space
     
     // GC に破棄されないよう、変数に持っておく
     private val listener = object: MainService.OnPlayStatusBroadcastListener {
@@ -28,6 +33,23 @@ class PanelFragment: Fragment() {
 	    if (!userSeeking) {
 		seekBar.setMax(playStatus.duration.toInt())
 		seekBar.setProgress(playStatus.msec.toInt())
+		
+		val cur_sec = playStatus.msec / 1000
+		val max_sec = playStatus.duration / 1000
+		val cur_mm = cur_sec / 60
+		val cur_ss = cur_sec % 60
+		val max_mm = max_sec / 60
+		val max_ss = max_sec % 60
+		
+		val text = String.format("%d:%02d/%d:%02d", cur_mm, cur_ss, max_mm, max_ss)
+		times.setText(text)
+		
+		val left_params = left_of_times.getLayoutParams() as ConstraintLayout.LayoutParams
+		left_params.horizontalWeight = playStatus.msec.toFloat()
+		left_of_times.setLayoutParams(left_params)
+		val right_params = right_of_times.getLayoutParams() as ConstraintLayout.LayoutParams
+		right_params.horizontalWeight = (playStatus.duration - playStatus.msec).toFloat()
+		right_of_times.setLayoutParams(right_params)
 	    }
 	}
     }
@@ -101,6 +123,10 @@ class PanelFragment: Fragment() {
 	seekBar = view.findViewById<SeekBar>(R.id.seek_bar).apply {
 	    setOnSeekBarChangeListener(seekBarChangeListener)
 	}
+	
+	times = view.findViewById<TextView>(R.id.times)
+	left_of_times = view.findViewById<Space>(R.id.left_of_times)
+	right_of_times = view.findViewById<Space>(R.id.right_of_times)
     }
     
     override fun onStart() {
