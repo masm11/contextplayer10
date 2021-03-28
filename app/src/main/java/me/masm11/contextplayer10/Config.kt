@@ -31,7 +31,19 @@ class PlayContextStore {
 	private lateinit var context: Context
 	private lateinit var config: PlayContextConfig
 	
-	private val INITIAL_JSON = "{\"list\":[{\"uuid\":\"0000\",\"name\":\"default\",\"topDir\":\"//primary\",\"path\":null,\"msec\":0}],\"playingUuid\":\"0000\"}"
+	private val INITIAL_JSON = """
+          {
+            "list":[
+              {
+                "uuid":"0000",
+                "name":"default",
+                "topDir":"//primary",
+                "path":null,"msec":0
+              }
+            ],
+            "playingUuid":"0000"
+          }
+        """
 	
 	fun load(context: Context) {
 	    this.context = context
