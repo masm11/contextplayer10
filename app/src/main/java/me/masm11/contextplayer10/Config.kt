@@ -71,9 +71,9 @@ class PlayContextStore {
 		    differ = differWithMsecSuppressed(currJson, json)
 	    }
 	    if (!differ) {
-		Log.d("json doesn't change.")
+		// Log.d("json doesn't change.")
 	    } else {
-		Log.d("json changed.")
+		// Log.d("json changed.")
 		with (pref.edit()) {
 		    putString(KEY_PLAY_CONTEXT_CONFIG, json)
 		    apply()
@@ -94,8 +94,8 @@ class PlayContextStore {
 		}
 	    }
 	    val json22 = Json.encodeToString(config2)
-	    Log.d("json1:  ${json1}")
-	    Log.d("json22: ${json22}")
+	    // Log.d("json1:  ${json1}")
+	    // Log.d("json22: ${json22}")
 	    return json1 != json22
 	}
     }

@@ -8,6 +8,8 @@ import android.os.IBinder
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothProfile
 
 import java.util.WeakHashMap
 
@@ -53,10 +55,6 @@ class MainService : Service() {
 	player.initialize()
 	
 	scope.launch {
-/*
-	    player.setTopDir(MFile("//primary/nana/impact_exciter/"))
-	    player.jumpTo(MFile("//primary/nana/impact_exciter/nana_ie_16.ogg"), 200000)
-*/
 	    if (playingContext.path == null) {
 		playingContext.topDir = "//primary/nana/impact_exciter"
 		playingContext.path = "//primary/nana/impact_exciter/nana_ie_16.ogg"
@@ -93,30 +91,33 @@ class MainService : Service() {
     
     fun startBroadcaster() {
 	broadcaster = Thread { ->
-	    while (true) {
-		scope.launch {
-		    val playStatus = player.getPlayStatus()
-		    
-		    if (playStatus.file != null) {
-			playingContext.topDir = playStatus.topDir.toString()
-			playingContext.path = playStatus.file.toString()
-			playingContext.msec = playStatus.msec
-			PlayContextStore.save()
-		    }
+	    try {
+		while (true) {
+		    scope.launch {
+			val playStatus = player.getPlayStatus()
 
-		    try {
-			onPlayStatusBroadcastListeners.forEach { listener, _ ->
-			    scope.launch {
-				withContext(Dispatchers.Main) {
-				    listener.onPlayStatusBroadcastListener(playStatus)
+			if (playStatus.file != null) {
+			    playingContext.topDir = playStatus.topDir.toString()
+			    playingContext.path = playStatus.file.toString()
+			    playingContext.msec = playStatus.msec
+			    PlayContextStore.save(false)
+			}
+
+			try {
+			    onPlayStatusBroadcastListeners.forEach { listener, _ ->
+				scope.launch {
+				    withContext(Dispatchers.Main) {
+					listener.onPlayStatusBroadcastListener(playStatus)
+				    }
 				}
 			    }
+			} catch (e: Exception) {
+			    Log.e("stopped", e)
 			}
-		    } catch (e: Exception) {
-			Log.e("stopped", e)
 		    }
+		    Thread.sleep(100)
 		}
-		Thread.sleep(100)
+	    } catch (e: InterruptedException) {
 	    }
 	}
 	broadcaster.start()
@@ -149,9 +150,11 @@ class MainService : Service() {
 	player.play()
 	enterForeground()
 	requestAudioFocus()
+	startA2dpWatcher()
     }
     
     suspend private fun handleStop() {
+	stopA2dpWatcher()
 	abandonAudioFocus()
 	leaveForeground()
 	player.stop()
@@ -188,5 +191,52 @@ class MainService : Service() {
     
     private fun abandonAudioFocus() {
 	audioManager.abandonAudioFocusRequest(audioFocusRequest)
+    }
+
+    private lateinit var a2dpWatcher: Thread
+    private fun startA2dpWatcher() {
+	val adapter = BluetoothAdapter.getDefaultAdapter()
+	if (adapter == null)
+	    return
+	a2dpWatcher = Thread { ->
+	    try {
+		var connected = false
+		while (true) {
+		    var newConnected: Boolean? = null
+		    if (!adapter.isEnabled)
+			newConnected = false
+		    else {
+			val state = adapter.getProfileConnectionState(BluetoothProfile.A2DP)
+			when (state) {
+			    BluetoothProfile.STATE_DISCONNECTED,
+			    BluetoothProfile.STATE_DISCONNECTING -> newConnected = false
+			    BluetoothProfile.STATE_CONNECTED,
+			    BluetoothProfile.STATE_CONNECTING -> newConnected = true
+			}
+		    }
+
+		    // Log.d("connected=${connected}, newConnected = ${newConnected}")
+		    if (newConnected != null) {
+			if (connected && !newConnected) {
+			    scope.launch {
+				withContext(Dispatchers.Main) {
+				    handleStop()
+				}
+			    }
+			}
+			connected = newConnected
+		    }
+
+		    Thread.sleep(500)
+		}
+	    } catch (e: InterruptedException) {
+	    }
+	}
+	a2dpWatcher.start()
+    }
+    
+    private fun stopA2dpWatcher() {
+	a2dpWatcher.interrupt()
+	a2dpWatcher.join()
     }
 }
