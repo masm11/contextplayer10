@@ -18,9 +18,11 @@ class MainActivity: AppCompatActivity() {
     // GC に破棄されないよう、変数に持っておく
     private val listener = object: MainService.OnPlayStatusBroadcastListener {
 	override fun onPlayStatusBroadcastListener(playStatus: Player.PlayStatus) {
+/*
 	    val text = "${playStatus.file} ${playStatus.msec}/${playStatus.duration}"
 	    val view: TextView = findViewById(R.id.text)
 	    view.setText(text)
+*/
 	}
     }
     
@@ -44,6 +46,7 @@ class MainActivity: AppCompatActivity() {
 	val intent = Intent(this, MainService::class.java)
 	startService(intent)
 	
+/*
 	val btn: Button = findViewById(R.id.button)
 	btn.setOnClickListener {
 	    val b = binder
@@ -63,6 +66,7 @@ class MainActivity: AppCompatActivity() {
 		}
 	    }
 	}
+*/
     }
     
     override fun onStart() {
