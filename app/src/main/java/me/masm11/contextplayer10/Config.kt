@@ -60,19 +60,43 @@ class PlayContextStore {
 	    return config.playingUuid
 	}
 	
-	fun save() {
+	fun save(save_msec: Boolean = true) {
 	    val pref = context.getSharedPreferences(KEY_STORAGE, Context.MODE_PRIVATE)
 	    var currJson = pref.getString(KEY_PLAY_CONTEXT_CONFIG, null)
 	    val json = Json.encodeToString(config)
-	    Log.d("save json1: ${json}")
-	    if (json == currJson) {
+	    // Log.d("save json1: ${json}")
+	    var differ = json != currJson
+	    if (differ && !save_msec) {
+		if (currJson != null)
+		    differ = differWithMsecSuppressed(currJson, json)
+	    }
+	    if (!differ) {
 		Log.d("json doesn't change.")
 	    } else {
+		Log.d("json changed.")
 		with (pref.edit()) {
 		    putString(KEY_PLAY_CONTEXT_CONFIG, json)
 		    apply()
 		}
 	    }
+	}
+	
+	fun differWithMsecSuppressed(json1: String, json2: String): Boolean {
+	    val config1 = Json.decodeFromString<PlayContextConfig>(json1)
+	    val config2 = Json.decodeFromString<PlayContextConfig>(json2)
+	    
+	    if (config1.playingUuid != config2.playingUuid)
+		return true
+	    config1.list.forEach { ctxt1 ->
+		config2.list.forEach { ctxt2 ->
+		    if (ctxt2.uuid == ctxt1.uuid)
+			ctxt2.msec = ctxt1.msec
+		}
+	    }
+	    val json22 = Json.encodeToString(config2)
+	    Log.d("json1:  ${json1}")
+	    Log.d("json22: ${json22}")
+	    return json1 != json22
 	}
     }
 }
