@@ -56,7 +56,6 @@ class MainService : Service() {
 	
 	scope.launch {
 	    if (playingContext.path == null) {
-		playingContext.topDir = "//primary/nana/impact_exciter"
 		playingContext.path = "//primary/nana/impact_exciter/nana_ie_16.ogg"
 		PlayContextStore.save()
 	    }

@@ -211,7 +211,7 @@ class MFile(val path: String) {
 
     val file: File
     get() {
-	Log.d("path=\"${path}\"")
+	// Log.d("path=\"${path}\"")
 	if (path == "//")
 	    return File("/")
 	val i = path.indexOf('/', 2)

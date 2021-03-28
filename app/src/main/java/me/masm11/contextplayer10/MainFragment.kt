@@ -85,7 +85,7 @@ class MainFragment: Fragment() {
 
     suspend private fun updateInfo(playStatus: Player.PlayStatus) {
 	val file = playStatus.file
-	if (file?.file.toString() != cache_path) {
+	if (file.toString() != cache_path) {
 	    cache_path = file.toString()
 	    val metadata = Metadata(file?.file.toString())
 	    if (metadata.extract()) {
@@ -97,6 +97,10 @@ class MainFragment: Fragment() {
 		cache_title = null
 		cache_artist = null
 	    }
+	    if (cache_title == null)
+		cache_title = "不明なタイトル"
+	    if (cache_artist == null)
+		cache_artist = "不明なアーティスト"
 	    textView_path.setText(cache_path)
 	    textView_title.setText(cache_title)
 	    textView_artist.setText(cache_artist)
