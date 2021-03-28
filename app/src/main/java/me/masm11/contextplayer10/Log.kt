@@ -12,6 +12,9 @@ class Log {
 	fun w(str: String) {
 	    android.util.Log.w(TAG, str)
 	}
+	fun w(str: String, e: Throwable) {
+	    android.util.Log.w(TAG, str, e)
+	}
 	fun e(str: String, e: Throwable) {
 	    android.util.Log.e(TAG, str, e)
 	}

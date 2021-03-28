@@ -3,11 +3,18 @@ package me.masm11.contextplayer10
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.widget.Button
 import android.widget.TextView
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+import android.view.animation.LinearInterpolator
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 
 import kotlinx.coroutines.*
 
@@ -45,28 +52,6 @@ class MainActivity: AppCompatActivity() {
 	
 	val intent = Intent(this, MainService::class.java)
 	startService(intent)
-	
-/*
-	val btn: Button = findViewById(R.id.button)
-	btn.setOnClickListener {
-	    val b = binder
-	    if (b != null) {
-		scope.launch {
-		    b.play()
-		}
-	    }
-	}
-	
-	val btn_stop: Button = findViewById(R.id.button_stop)
-	btn_stop.setOnClickListener {
-	    val b = binder
-	    if (b != null) {
-		scope.launch {
-		    b.stop()
-		}
-	    }
-	}
-*/
     }
     
     override fun onStart() {
