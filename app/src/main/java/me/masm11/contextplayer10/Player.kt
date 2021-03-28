@@ -76,6 +76,14 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	dequeueNextMediaPlayer()
     }
     
+    suspend fun seekTo(msec: Long) {
+	val mp = currentMediaPlayer
+	if (mp != null) {
+	    Log.d("seekTo ${msec}")
+	    mp.seekTo(msec, MediaPlayer.SEEK_PREVIOUS_SYNC)
+	}
+    }
+
     suspend fun setVolume(volume: Double) {
 	var v = volume
 	if (v < 0.0)

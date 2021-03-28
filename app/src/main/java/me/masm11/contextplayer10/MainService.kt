@@ -136,6 +136,9 @@ class MainService : Service() {
 	suspend fun stop() {
 	    handleStop()
 	}
+	suspend fun seek(msec: Long) {
+	    handleSeek(msec)
+	}
 	fun setOnPlayStatusBroadcastedListener(listener: OnPlayStatusBroadcastListener) {
 	    onPlayStatusBroadcastListeners.put(listener, true)
 	}
@@ -158,6 +161,10 @@ class MainService : Service() {
 	abandonAudioFocus()
 	leaveForeground()
 	player.stop()
+    }
+    
+    suspend private fun handleSeek(msec: Long) {
+	player.seekTo(msec)
     }
     
     

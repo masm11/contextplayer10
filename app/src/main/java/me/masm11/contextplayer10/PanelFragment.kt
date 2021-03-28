@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.widget.SeekBar
 import android.widget.Button
 import android.widget.TextView
 import android.view.LayoutInflater
@@ -18,15 +19,16 @@ import kotlinx.coroutines.*
 class PanelFragment: Fragment() {
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private var binder: MainService.Binder? = null
+    private var userSeeking = false
+    private lateinit var seekBar: SeekBar
     
     // GC に破棄されないよう、変数に持っておく
     private val listener = object: MainService.OnPlayStatusBroadcastListener {
 	override fun onPlayStatusBroadcastListener(playStatus: Player.PlayStatus) {
-/*
-	    val text = "${playStatus.file} ${playStatus.msec}/${playStatus.duration}"
-	    val view: TextView = findViewById(R.id.text)
-	    view.setText(text)
-*/
+	    if (!userSeeking) {
+		seekBar.setMax(playStatus.duration.toInt())
+		seekBar.setProgress(playStatus.msec.toInt())
+	    }
 	}
     }
     
@@ -62,7 +64,7 @@ class PanelFragment: Fragment() {
 		}
 	    }
 	}
-
+	
 	view.findViewById<Button>(R.id.button_stop).apply {
 	    setOnClickListener {
 		val b = binder
@@ -72,6 +74,10 @@ class PanelFragment: Fragment() {
 		    }
 		}
 	    }
+	}
+	
+	seekBar = view.findViewById<SeekBar>(R.id.seek_bar).apply {
+	    setOnSeekBarChangeListener(seekBarChangeListener)
 	}
     }
     
@@ -89,5 +95,24 @@ class PanelFragment: Fragment() {
 	val ctxt = getContext()
 	if (ctxt != null)
 	    ctxt.unbindService(conn)
+    }
+
+    val seekBarChangeListener = object: SeekBar.OnSeekBarChangeListener {
+	override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
+	    if (!fromUser)
+		return
+	    val b = binder
+	    if (b != null) {
+		scope.launch {
+		    b.seek(progress.toLong())
+		}
+	    }
+	}
+	override fun onStartTrackingTouch(seekBar: SeekBar) {
+	    userSeeking = true
+	}
+	override fun onStopTrackingTouch(seekBar: SeekBar) {
+	    userSeeking = false
+	}
     }
 }
