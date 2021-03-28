@@ -62,11 +62,16 @@ class PlayContextStore {
 	
 	fun save() {
 	    val pref = context.getSharedPreferences(KEY_STORAGE, Context.MODE_PRIVATE)
+	    var currJson = pref.getString(KEY_PLAY_CONTEXT_CONFIG, null)
 	    val json = Json.encodeToString(config)
 	    Log.d("save json1: ${json}")
-	    with (pref.edit()) {
-		putString(KEY_PLAY_CONTEXT_CONFIG, json)
-		apply()
+	    if (json == currJson) {
+		Log.d("json doesn't change.")
+	    } else {
+		with (pref.edit()) {
+		    putString(KEY_PLAY_CONTEXT_CONFIG, json)
+		    apply()
+		}
 	    }
 	}
     }
