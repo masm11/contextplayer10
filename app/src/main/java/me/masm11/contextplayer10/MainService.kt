@@ -167,12 +167,15 @@ class MainService : Service() {
     }
     
     suspend private fun handleStop() {
+	Log.d("handleStop")
 	if (playing) {
 	    player.stop()
 	    stopA2dpWatcher()
 	    abandonAudioFocus()
 	    leaveForeground()
 	    playing = false
+	    
+	    saveContext()
 	}
     }
     
@@ -186,6 +189,18 @@ class MainService : Service() {
 
     suspend private fun handleSeek(msec: Long) {
 	player.seekTo(msec)
+    }
+    
+    private fun saveContext() {
+	scope.launch {
+	    val playStatus = player.getPlayStatus()
+	    if (playStatus.file != null) {
+		playingContext.topDir = playStatus.topDir.toString()
+		playingContext.path = playStatus.file.toString()
+		playingContext.msec = playStatus.msec
+		PlayContextStore.save(true)
+	    }
+	}
     }
     
     
