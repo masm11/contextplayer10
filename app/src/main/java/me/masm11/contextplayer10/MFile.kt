@@ -19,6 +19,8 @@ package me.masm11.contextplayer10
 import java.io.File
 import java.util.Locale
 
+import kotlinx.coroutines.*
+
 import android.os.Environment
 import android.content.Context
 
@@ -55,47 +57,52 @@ class MFile(val path: String) {
 	suspend fun selectNext(mNextOf: MFile?, mTopDir: MFile): MFile? {	// m means MFile, not member.
 	    if (mNextOf == null)
 		return null;
-	    val nextOf = mNextOf.toString()
-	    val topDir = mTopDir.toString()
-	    Log.d("nextOf=${nextOf}")
-	    var found: String? = null
-	    if (nextOf.startsWith(topDir)) {
-		if (topDir != "//") {
-		    //                           +1: for '/'   ↓
-		    val parts = nextOf.substring(topDir.length + 1).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-		    found = lookForFile(MFile(topDir), parts, 0, false)
-		} else {
-		    val parts = nextOf.substring(2).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-		    found = lookForFile(MFile(topDir), parts, 0, false)
+	    return withContext(Dispatchers.IO) {
+		val nextOf = mNextOf.toString()
+		val topDir = mTopDir.toString()
+		Log.d("nextOf=${nextOf}")
+		var found: String? = null
+		if (nextOf.startsWith(topDir)) {
+		    if (topDir != "//") {
+			//                           +1: for '/'   ↓
+			val parts = nextOf.substring(topDir.length + 1).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+			found = lookForFile(MFile(topDir), parts, 0, false)
+		    } else {
+			val parts = nextOf.substring(2).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+			found = lookForFile(MFile(topDir), parts, 0, false)
+		    }
 		}
+		if (found == null)
+		    found = lookForFile(MFile(topDir), null, 0, false)
+		Log.d("found=${found}")
+		if (found != null) MFile(found) else null
 	    }
-	    if (found == null)
-		found = lookForFile(MFile(topDir), null, 0, false)
-	    Log.d("found=${found}")
-	    return if (found != null) MFile(found) else null
 	}
-
+	
 	suspend fun selectPrev(mPrevOf: MFile?, mTopDir: MFile): MFile? {
 	    if (mPrevOf == null)
 		return null;
-	    val prevOf = mPrevOf.toString()
-	    val topDir = mTopDir.toString()
-	    Log.d("prevOf=${prevOf}")
-	    var found: String? = null
-	    if (prevOf.startsWith(topDir)) {
-		if (topDir != "//") {
-		    //                            +1: for '/'  ↓
-		    val parts = prevOf.substring(topDir.length + 1).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-		    found = lookForFile(MFile(topDir), parts, 0, true)
-		} else {
-		    val parts = prevOf.substring(2).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-		    found = lookForFile(MFile(topDir), parts, 0, true)
+	    return withContext(Dispatchers.IO) {
+		val prevOf = mPrevOf.toString()
+		val topDir = mTopDir.toString()
+		Log.d("prevOf=${prevOf}")
+		var found: String? = null
+		if (prevOf.startsWith(topDir)) {
+		    if (topDir != "//") {
+			//                            +1: for '/'  ↓
+			val parts = prevOf.substring(topDir.length + 1).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+			found = lookForFile(MFile(topDir), parts, 0, true)
+		    } else {
+			val parts = prevOf.substring(2).split("/".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+			found = lookForFile(MFile(topDir), parts, 0, true)
+		    }
 		}
+		if (found == null)
+		    found = lookForFile(MFile(topDir), null, 0, true)
+		Log.d("found=${found}")
+		
+		if (found != null) MFile(found) else null
 	    }
-	    if (found == null)
-		found = lookForFile(MFile(topDir), null, 0, true)
-	    Log.d("found=${found}")
-	    return if (found != null) MFile(found) else null
 	}
 
 	/* 次のファイルを探す。
@@ -109,7 +116,7 @@ class MFile(val path: String) {
 	* lookForFile() の役割は、dir 内 subdir も含めて、nextOf の次のファイルを探すこと。
 	* parts == null の場合、nextOf の path tree から外れた場所を探している。
 	*/
-	suspend private fun lookForFile(dir: MFile, parts: Array<String>?, parts_idx: Int, backward: Boolean): String? {
+	private fun lookForFile(dir: MFile, parts: Array<String>?, parts_idx: Int, backward: Boolean): String? {
 	    var cur: String? = null
 	    if (parts != null) {
 		if (parts_idx < parts.size)
@@ -161,7 +168,7 @@ class MFile(val path: String) {
 		    }
 		}
 	    }
-	    
+
 	    return null
 	}
 	
