@@ -71,6 +71,7 @@ class MainService : Service() {
     }
     
     override fun onDestroy() {
+	Log.d("service destroyed")
 	abandonAudioFocus()
 	stopBroadcaster()
 	scope.cancel()
@@ -153,19 +154,26 @@ class MainService : Service() {
 	return Binder()
     }
     
+    private var playing = false
     
     suspend private fun handlePlay() {
-	player.play()
-	enterForeground()
-	requestAudioFocus()
-	startA2dpWatcher()
+	if (!playing) {
+	    enterForeground()
+	    requestAudioFocus()
+	    startA2dpWatcher()
+	    player.play()
+	    playing = true
+	}
     }
     
     suspend private fun handleStop() {
-	stopA2dpWatcher()
-	abandonAudioFocus()
-	leaveForeground()
-	player.stop()
+	if (playing) {
+	    player.stop()
+	    stopA2dpWatcher()
+	    abandonAudioFocus()
+	    leaveForeground()
+	    playing = false
+	}
     }
     
     suspend private fun handlePrev() {
@@ -213,12 +221,12 @@ class MainService : Service() {
 	audioManager.abandonAudioFocusRequest(audioFocusRequest)
     }
 
-    private lateinit var a2dpWatcher: Thread
+    private var a2dpWatcher: Thread? = null
     private fun startA2dpWatcher() {
 	val adapter = BluetoothAdapter.getDefaultAdapter()
 	if (adapter == null)
 	    return
-	a2dpWatcher = Thread { ->
+	val watcher = Thread { ->
 	    try {
 		var connected = false
 		while (true) {
@@ -252,11 +260,17 @@ class MainService : Service() {
 	    } catch (e: InterruptedException) {
 	    }
 	}
-	a2dpWatcher.start()
+	watcher.start()
+	a2dpWatcher = watcher
     }
     
     private fun stopA2dpWatcher() {
-	a2dpWatcher.interrupt()
-	a2dpWatcher.join()
+	Log.d("a2dpWatcher=${a2dpWatcher}")
+	val watcher = a2dpWatcher
+	if (watcher != null) {
+	    a2dpWatcher = null
+	    watcher.interrupt()
+	    watcher.join()
+	}
     }
 }
