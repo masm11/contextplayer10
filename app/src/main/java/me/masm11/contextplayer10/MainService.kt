@@ -34,7 +34,7 @@ class MainService : Service() {
 	setOnAudioFocusChangeListener { focusChange ->
 	    Log.d("focusChange=${focusChange}")
 	    if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-		handleStop()
+		handleStop(false)
 	    }
 	}
     }.build()
@@ -70,10 +70,8 @@ class MainService : Service() {
     
     override fun onDestroy() {
 	Log.d("service destroyed")
-	runBlocking {
-	    handleStop()
-	    stopBroadcaster()
-	}
+	handleStop(true)
+	stopBroadcaster()
 	Log.d("canceling scope")
 	scope.cancel()
 	Log.d("super destroy")
@@ -136,7 +134,7 @@ class MainService : Service() {
 	    handlePlay()
 	}
 	fun stop() {
-	    handleStop()
+	    handleStop(false)
 	}
 	suspend fun prev() {
 	    handlePrev()
@@ -169,7 +167,7 @@ class MainService : Service() {
 	}
     }
     
-    private fun handleStop() {
+    private fun handleStop(block: Boolean) {
 	Log.d("handleStop")
 	if (playing) {
 	    player.stop()
@@ -178,7 +176,7 @@ class MainService : Service() {
 	    leaveForeground()
 	    playing = false
 	    
-	    saveContext()
+	    saveContext(block)
 	}
     }
     
@@ -194,18 +192,32 @@ class MainService : Service() {
 	player.seekTo(msec)
     }
     
-    private fun saveContext() {
-	scope.launch {
-	    val playStatus = player.getPlayStatus()
-	    if (playStatus.file != null) {
-		playingContext.topDir = playStatus.topDir.toString()
-		playingContext.path = playStatus.file.toString()
-		playingContext.msec = playStatus.msec
-		PlayContextStore.save(true)
+    private fun saveContext(block: Boolean) {
+	Log.d("saveContext")
+	if (block) {
+	    runBlocking {
+		saveContext_Body()
+	    }
+	} else {
+	    scope.launch {
+		saveContext_Body()
 	    }
 	}
     }
     
+    suspend private fun saveContext_Body() {
+	Log.d("get status")
+	val playStatus = player.getPlayStatus()
+	Log.d("get status done")
+	if (playStatus.file != null) {
+	    playingContext.topDir = playStatus.topDir.toString()
+	    playingContext.path = playStatus.file.toString()
+	    playingContext.msec = playStatus.msec
+	    Log.d("save!")
+	    PlayContextStore.save(true)
+	    Log.d("save done!")
+	}
+    }
     
     private fun enterForeground() {
 	val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -266,7 +278,7 @@ class MainService : Service() {
 			if (connected && !newConnected) {
 			    scope.launch {
 				withContext(Dispatchers.Main) {
-				    handleStop()
+				    handleStop(false)
 				}
 			    }
 			}
