@@ -102,9 +102,7 @@ class PanelFragment: Fragment() {
 	    setOnClickListener {
 		val b = binder
 		if (b != null) {
-		    scope.launch {
-			b.stop()
-		    }
+		    b.stop()
 		}
 	    }
 	}
@@ -150,11 +148,8 @@ class PanelFragment: Fragment() {
 	    if (!fromUser)
 		return
 	    val b = binder
-	    if (b != null) {
-		scope.launch {
-		    b.seek(progress.toLong())
-		}
-	    }
+	    if (b != null)
+		b.seek(progress.toLong())
 	}
 	override fun onStartTrackingTouch(seekBar: SeekBar) {
 	    userSeeking = true

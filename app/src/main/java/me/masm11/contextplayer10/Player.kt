@@ -40,37 +40,33 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
     
     suspend fun jumpTo(file: MFile, msec: Long) {
 	var mFile: MFile? = file
-	withContext(Dispatchers.IO) {
-	    while (true) {
-		val f = mFile
-		if (f == null)
-		    break
-		val mp = createMediaPlayer(f)
-		if (mp != null) {
-		    mp.seekTo(msec.toInt())
-		    currentMediaPlayer = mp
-		    currentMFile = mFile
-		    break
-		}
-		
-		mFile = MFile.selectNext(f, topDir)
+	while (true) {
+	    val f = mFile
+	    if (f == null)
+		break
+	    val mp = createMediaPlayer(f)
+	    if (mp != null) {
+		mp.seekTo(msec.toInt())
+		currentMediaPlayer = mp
+		currentMFile = mFile
+		break
 	    }
+	    
+	    mFile = MFile.selectNext(f, topDir)
 	}
     }
     
     suspend fun play() {
-	withContext(Dispatchers.IO) {
-	    var mp = currentMediaPlayer
-	    if (mp != null) {
-		mp.start()
-		Log.d("started")
-	    }
+	var mp = currentMediaPlayer
+	if (mp != null) {
+	    mp.start()
+	    Log.d("started")
 	}
 	
 	enqueueNextMediaPlayer()
     }
     
-    suspend fun stop() {
+    fun stop() {
 	val mp = currentMediaPlayer
 	if (mp != null) {
 	    mp.pause()
@@ -87,32 +83,30 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		mp_orig.seekTo(0)
 		return
 	    }
-	    withContext(Dispatchers.IO) {
-		var curr = currentMFile
-		var playing = (mp_orig != null && mp_orig.isPlaying())
+	    var curr = currentMFile
+	    var playing = (mp_orig != null && mp_orig.isPlaying())
+	    
+	    while (true) {
+		curr = MFile.selectPrev(curr, topDir)
 		
-		while (true) {
-		    curr = MFile.selectPrev(curr, topDir)
-		    
-		    Log.d("curr=${curr}")
-		    if (curr == null)
-			break
-		    
-		    val mp = createMediaPlayer(curr)
-		    if (mp == null)
-			continue
-		    
-		    if (mp_orig != null) {
-			mp_orig.stop()
-			mp_orig.release()
-		    }
-		    
-		    if (playing)
-			mp.start()
-		    currentMediaPlayer = mp
-		    currentMFile = curr
+		Log.d("curr=${curr}")
+		if (curr == null)
 		    break
+		
+		val mp = createMediaPlayer(curr)
+		if (mp == null)
+		    continue
+		
+		if (mp_orig != null) {
+		    mp_orig.stop()
+		    mp_orig.release()
 		}
+		
+		if (playing)
+		    mp.start()
+		currentMediaPlayer = mp
+		currentMFile = curr
+		break
 	    }
 	}
 	enqueueNextMediaPlayer()
@@ -121,38 +115,36 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
     suspend fun gotoNext() {
 	mutex.withLock {
 	    val mp_orig = currentMediaPlayer
-	    withContext(Dispatchers.IO) {
-		var curr = currentMFile
-		var playing = (mp_orig != null && mp_orig.isPlaying())
+	    var curr = currentMFile
+	    var playing = (mp_orig != null && mp_orig.isPlaying())
+	    
+	    while (true) {
+		curr = MFile.selectNext(curr, topDir)
 		
-		while (true) {
-		    curr = MFile.selectNext(curr, topDir)
-		    
-		    Log.d("curr=${curr}")
-		    if (curr == null)
-			break
-		    
-		    val mp = createMediaPlayer(curr)
-		    if (mp == null)
-			continue
-		    
-		    if (mp_orig != null) {
-			mp_orig.stop()
-			mp_orig.release()
-		    }
-		    
-		    if (playing)
-			mp.start()
-		    currentMediaPlayer = mp
-		    currentMFile = curr
+		Log.d("curr=${curr}")
+		if (curr == null)
 		    break
+		
+		val mp = createMediaPlayer(curr)
+		if (mp == null)
+		    continue
+		
+		if (mp_orig != null) {
+		    mp_orig.stop()
+		    mp_orig.release()
 		}
+		
+		if (playing)
+		    mp.start()
+		currentMediaPlayer = mp
+		currentMFile = curr
+		break
 	    }
 	}
 	enqueueNextMediaPlayer()
     }
 
-    suspend fun seekTo(msec: Long) {
+    fun seekTo(msec: Long) {
 	val mp = currentMediaPlayer
 	if (mp != null) {
 	    Log.d("seekTo ${msec}")
@@ -160,7 +152,7 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	}
     }
 
-    suspend fun setVolume(volume: Double) {
+    fun setVolume(volume: Double) {
 	var v = volume
 	if (v < 0.0)
 	    v = 0.0
@@ -191,16 +183,14 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	return vol
     }
     
-    suspend private fun changeVolume() {
+    private fun changeVolume() {
 	val vol = calcVolume()
-	withContext(Dispatchers.IO) {
-	    var mp = currentMediaPlayer
-	    if (mp != null)
-		mp.setVolume(vol.toFloat(), vol.toFloat())
-	    mp = nextMediaPlayer
-	    if (mp != null)
-		mp.setVolume(vol.toFloat(), vol.toFloat())
-	}
+	var mp = currentMediaPlayer
+	if (mp != null)
+	    mp.setVolume(vol.toFloat(), vol.toFloat())
+	mp = nextMediaPlayer
+	if (mp != null)
+	    mp.setVolume(vol.toFloat(), vol.toFloat())
     }
     
     suspend private fun reenqueueNextMediaPlayer() {
@@ -215,31 +205,29 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	nextMediaPlayer = null
 	nextMFile = null
 	
-	withContext(Dispatchers.IO) {
-	    var next = currMFile
-	    while (true) {
-		next = MFile.selectNext(next, topDir)
-		Log.d("next=${next}")
-		if (next == null)
-		    break
-		
-		val mp = createMediaPlayer(next)
-		if (mp == null)
-		    continue
-		
-		val currPlayer = currentMediaPlayer
-		if (currPlayer == null)
-		    break
-		
-		currPlayer.setNextMediaPlayer(mp)
-		nextMediaPlayer = mp
-		nextMFile = next
+	var next = currMFile
+	while (true) {
+	    next = MFile.selectNext(next, topDir)
+	    Log.d("next=${next}")
+	    if (next == null)
 		break
-	    }
+	    
+	    val mp = createMediaPlayer(next)
+	    if (mp == null)
+		continue
+	    
+	    val currPlayer = currentMediaPlayer
+	    if (currPlayer == null)
+		break
+	    
+	    currPlayer.setNextMediaPlayer(mp)
+	    nextMediaPlayer = mp
+	    nextMFile = next
+	    break
 	}
     }
     
-    suspend private fun dequeueNextMediaPlayer() {
+    private fun dequeueNextMediaPlayer() {
 	Log.d("dequeue")
 	val mp = nextMediaPlayer
 	if (mp != null) {

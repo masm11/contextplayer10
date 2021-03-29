@@ -34,9 +34,7 @@ class MainService : Service() {
 	setOnAudioFocusChangeListener { focusChange ->
 	    Log.d("focusChange=${focusChange}")
 	    if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-		scope.launch {
-		    handleStop()
-		}
+		handleStop()
 	    }
 	}
     }.build()
@@ -72,9 +70,13 @@ class MainService : Service() {
     
     override fun onDestroy() {
 	Log.d("service destroyed")
-	abandonAudioFocus()
-	stopBroadcaster()
+	runBlocking {
+	    handleStop()
+	    stopBroadcaster()
+	}
+	Log.d("canceling scope")
 	scope.cancel()
+	Log.d("super destroy")
 	super.onDestroy()
     }
     
@@ -133,7 +135,7 @@ class MainService : Service() {
 	suspend fun play() {
 	    handlePlay()
 	}
-	suspend fun stop() {
+	fun stop() {
 	    handleStop()
 	}
 	suspend fun prev() {
@@ -142,7 +144,7 @@ class MainService : Service() {
 	suspend fun next() {
 	    handleNext()
 	}
-	suspend fun seek(msec: Long) {
+	fun seek(msec: Long) {
 	    handleSeek(msec)
 	}
 	fun setOnPlayStatusBroadcastedListener(listener: OnPlayStatusBroadcastListener) {
@@ -157,6 +159,7 @@ class MainService : Service() {
     private var playing = false
     
     suspend private fun handlePlay() {
+	Log.d("handlePlay")
 	if (!playing) {
 	    enterForeground()
 	    requestAudioFocus()
@@ -166,7 +169,7 @@ class MainService : Service() {
 	}
     }
     
-    suspend private fun handleStop() {
+    private fun handleStop() {
 	Log.d("handleStop")
 	if (playing) {
 	    player.stop()
@@ -187,7 +190,7 @@ class MainService : Service() {
 	player.gotoNext()
     }
 
-    suspend private fun handleSeek(msec: Long) {
+    private fun handleSeek(msec: Long) {
 	player.seekTo(msec)
     }
     
