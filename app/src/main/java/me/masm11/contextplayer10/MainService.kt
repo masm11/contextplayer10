@@ -2,6 +2,7 @@ package me.masm11.contextplayer10
 
 import androidx.appcompat.app.AppCompatActivity
 import android.app.Service
+import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import android.os.IBinder
@@ -229,10 +230,15 @@ class MainService : Service() {
 	    manager.createNotificationChannel(channel)
 	}
 	
+	val intent = Intent(this, MainActivity::class.java).let { i ->
+	    PendingIntent.getActivity(this, 0, i, 0)
+	}
+
 	val notification = NotificationCompat.Builder(this, id).apply {
 	    setContentTitle("再生中")
 	    setContentText("Playing...")
 	    setSmallIcon(R.drawable.ic_launcher_background)
+	    setContentIntent(intent)
 	}.build()
 	
 	startForeground(1, notification)
