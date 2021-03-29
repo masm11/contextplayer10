@@ -101,18 +101,18 @@ class MainService : Service() {
 			    playingContext.path = playStatus.file.toString()
 			    playingContext.msec = playStatus.msec
 			    PlayContextStore.save(false)
-			}
 
-			try {
-			    onPlayStatusBroadcastListeners.forEach { listener, _ ->
-				scope.launch {
-				    withContext(Dispatchers.Main) {
-					listener.onPlayStatusBroadcastListener(playStatus)
+			    try {
+				onPlayStatusBroadcastListeners.forEach { listener, _ ->
+				    scope.launch {
+					withContext(Dispatchers.Main) {
+					    listener.onPlayStatusBroadcastListener(playStatus)
+					}
 				    }
 				}
+			    } catch (e: Exception) {
+				Log.e("stopped", e)
 			    }
-			} catch (e: Exception) {
-			    Log.e("stopped", e)
 			}
 		    }
 		    Thread.sleep(100)
