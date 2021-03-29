@@ -82,10 +82,9 @@ class PlayContextStore {
 		if (currJson != null)
 		    differ = differWithMsecSuppressed(currJson, json)
 	    }
-	    if (!differ) {
-		// Log.d("json doesn't change.")
-	    } else {
+	    if (differ) {
 		// Log.d("json changed.")
+		Log.d("save json: ${json}")
 		with (pref.edit()) {
 		    putString(KEY_PLAY_CONTEXT_CONFIG, json)
 		    apply()
