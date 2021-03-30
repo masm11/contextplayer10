@@ -135,6 +135,9 @@ class MainService : Service() {
 	suspend fun play() {
 	    handlePlay()
 	}
+	suspend fun jump(path: MFile) {
+	    handleJump(path)
+	}
 	fun stop() {
 	    handleStop(false)
 	}
@@ -182,6 +185,10 @@ class MainService : Service() {
 	}
     }
     
+    suspend private fun handleJump(path: MFile) {
+	player.jumpTo(path, 0)
+    }
+
     suspend private fun handlePrev() {
 	player.gotoPrev()
     }

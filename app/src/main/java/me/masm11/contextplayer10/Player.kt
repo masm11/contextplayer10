@@ -39,20 +39,33 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
     }
     
     suspend fun jumpTo(file: MFile, msec: Long) {
-	var mFile: MFile? = file
-	while (true) {
-	    val f = mFile
-	    if (f == null)
-		break
-	    val mp = createMediaPlayer(f)
-	    if (mp != null) {
-		mp.seekTo(msec.toInt())
+	mutex.withLock {
+	    val mp_orig = currentMediaPlayer
+	    var curr: MFile? = file
+	    var playing = (mp_orig != null && mp_orig.isPlaying())
+	    
+	    while (true) {
+		Log.d("curr=${curr}")
+		if (curr == null)
+		    break
+		
+		val mp = createMediaPlayer(curr)
+		if (mp == null) {
+		    curr = MFile.selectNext(curr, topDir)
+		    continue
+		}
+		
+		if (mp_orig != null) {
+		    mp_orig.stop()
+		    mp_orig.release()
+		}
+		
+		if (playing)
+		    mp.start()
 		currentMediaPlayer = mp
-		currentMFile = mFile
+		currentMFile = curr
 		break
 	    }
-	    
-	    mFile = MFile.selectNext(f, topDir)
 	}
     }
     

@@ -66,6 +66,17 @@ class ExplorerFragment: Fragment() {
 
 	    val adapter = ItemAdapter(ctxt, MFile("//primary/nana/impact_exciter"))
 	    listView.setAdapter(adapter)
+	    listView.setOnItemClickListener { _, _, pos, _ ->
+		val item = adapter.getItem(pos)
+
+		if (item.isDirectory) {
+		} else {
+		    val b = binder as MainService.Binder
+		    scope.launch {
+			b.jump(item.path)
+		    }
+		}
+	    }
 	}
 
 //	Item(MFile("//primary/nana/impact_exciter/nana_ie_16.ogg"))
