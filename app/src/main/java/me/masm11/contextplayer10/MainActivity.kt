@@ -57,6 +57,7 @@ class MainActivity: AppCompatActivity() {
     override fun onStart() {
 	super.onStart()
 	val intent = Intent(this, MainService::class.java)
+	startService(intent)
 	bindService(intent, conn, BIND_AUTO_CREATE)
     }
     

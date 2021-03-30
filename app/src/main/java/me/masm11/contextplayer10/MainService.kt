@@ -80,7 +80,8 @@ class MainService : Service() {
     }
     
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-	return START_STICKY
+	Log.d("onStartCommand")
+	return START_NOT_STICKY
     }
     
     
@@ -230,15 +231,15 @@ class MainService : Service() {
 	    manager.createNotificationChannel(channel)
 	}
 	
-	val intent = Intent(this, MainActivity::class.java).let { i ->
+	val pendingIntent = Intent(this, MainActivity::class.java).let { i ->
 	    PendingIntent.getActivity(this, 0, i, 0)
 	}
-
+	
 	val notification = NotificationCompat.Builder(this, id).apply {
 	    setContentTitle("再生中")
 	    setContentText("Playing...")
 	    setSmallIcon(R.drawable.ic_launcher_background)
-	    setContentIntent(intent)
+	    setContentIntent(pendingIntent)
 	}.build()
 	
 	startForeground(1, notification)
