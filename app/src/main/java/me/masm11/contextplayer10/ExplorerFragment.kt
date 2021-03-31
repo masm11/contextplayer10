@@ -138,7 +138,10 @@ class ExplorerFragment: Fragment() {
 	    
 	    val list = dir.listFiles()
 	    if (list != null) {
-		list.sort()
+		list.sortWith { a, b ->
+		    val c = a.toString().toLowerCase().compareTo(b.toString().toLowerCase())
+		    if (c != 0) c else a.toString().compareTo(b.toString())
+		}
 		list.forEach { m ->
 		    if (m.isDirectory)
 			dirs.add(Item(m, this))
@@ -146,7 +149,8 @@ class ExplorerFragment: Fragment() {
 			files.add(Item(m, this))
 		}
 	    }
-	    itemList.add(Item(dir.parentFile, this, ".."))
+	    if (dir.toString() != "//")
+		itemList.add(Item(dir.parentFile, this, ".."))
 	    itemList.addAll(dirs)
 	    itemList.addAll(files)
 	}
