@@ -138,6 +138,7 @@ class ExplorerFragment: Fragment() {
 	    
 	    val list = dir.listFiles()
 	    if (list != null) {
+		list.sort()
 		list.forEach { m ->
 		    if (m.isDirectory)
 			dirs.add(Item(m, this))

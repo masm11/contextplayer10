@@ -25,7 +25,7 @@ import android.os.Environment
 import android.content.Context
 
 // Mapped file
-class MFile(val path: String) {
+class MFile(val path: String): Comparable<MFile> {
     constructor(file: File) : this(file.toString())
 
     companion object {
@@ -272,8 +272,8 @@ class MFile(val path: String) {
 	    return MFile(path.substring(0, i))
 	return MFile("//")
     }
-
-    fun compareTo(file: MFile): Int {
-	return this.absolutePath.compareTo(file.absolutePath)
+    
+    override fun compareTo(other: MFile): Int {
+	return this.absolutePath.compareTo(other.absolutePath)
     }
 }
