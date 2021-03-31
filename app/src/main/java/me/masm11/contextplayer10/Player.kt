@@ -35,7 +35,7 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
     suspend fun setTopDir(dir: MFile) {
 	topDir = dir
 	// 次の曲が変わるかもしれないので、enqueue しなおす
-	reenqueueNextMediaPlayer();
+	enqueueNextMediaPlayer();
     }
     
     suspend fun jumpTo(file: MFile, msec: Long) {
@@ -58,12 +58,14 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		if (mp_orig != null) {
 		    mp_orig.stop()
 		    mp_orig.release()
+		    Log.d("mp_orig=${mp_orig} release")
 		}
 		
 		if (playing)
 		    mp.start()
 		currentMediaPlayer = mp
 		currentMFile = curr
+		Log.d("1currentMFile=${currentMFile}")
 		break
 	    }
 	}
@@ -113,12 +115,14 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		if (mp_orig != null) {
 		    mp_orig.stop()
 		    mp_orig.release()
+		    Log.d("mp_orig=${mp_orig} release")
 		}
 		
 		if (playing)
 		    mp.start()
 		currentMediaPlayer = mp
 		currentMFile = curr
+		Log.d("2currentMFile=${currentMFile}")
 		break
 	    }
 	}
@@ -132,9 +136,10 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	    var playing = (mp_orig != null && mp_orig.isPlaying())
 	    
 	    while (true) {
+		Log.d("before curr=${curr}")
 		curr = MFile.selectNext(curr, topDir)
 		
-		Log.d("curr=${curr}")
+		Log.d("after curr=${curr}")
 		if (curr == null)
 		    break
 		
@@ -145,12 +150,14 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		if (mp_orig != null) {
 		    mp_orig.stop()
 		    mp_orig.release()
+		    Log.d("mp_orig=${mp_orig} release")
 		}
 		
 		if (playing)
 		    mp.start()
 		currentMediaPlayer = mp
 		currentMFile = curr
+		Log.d("3currentMFile=${currentMFile}")
 		break
 	    }
 	}
@@ -206,17 +213,11 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	    mp.setVolume(vol.toFloat(), vol.toFloat())
     }
     
-    suspend private fun reenqueueNextMediaPlayer() {
-	dequeueNextMediaPlayer()
-	enqueueNextMediaPlayer()
-    }
-    
     suspend private fun enqueueNextMediaPlayer() {
 	Log.d("enqueue")
 	val currMFile = currentMFile
 	
-	nextMediaPlayer = null
-	nextMFile = null
+	dequeueNextMediaPlayer()
 	
 	var next = currMFile
 	while (true) {
@@ -245,6 +246,7 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	val mp = nextMediaPlayer
 	if (mp != null) {
 	    mp.release()
+	    Log.d("mp=${mp} release")
 	    nextMediaPlayer = null
 	    nextMFile = null
 	}
@@ -254,13 +256,20 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	return withContext(Dispatchers.IO) {
 	    val uri = Uri.fromFile(file.file)
 	    val mp = MediaPlayer.create(context, uri, null, audioAttributes, audioSessionId)
-	    Log.d("mp=${mp}")
+	    Log.d("mp=${mp} alloc")
 	    if (mp != null) {
 		mp.setOnCompletionListener { p ->
 		    Log.d("completed ${p}")
 		    scope.launch {
 			handleCompletion(p)
 		    }
+		}
+		mp.setOnErrorListener { p, _, _ ->
+		    Log.d("error ${p}")
+		    scope.launch {
+			handleError(p)
+		    }
+		    true
 		}
 		val vol = calcVolume()
 		mp.setVolume(vol.toFloat(), vol.toFloat())
@@ -270,17 +279,47 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
     }
     
     suspend private fun handleCompletion(mp: MediaPlayer) {
-	mp.release()
-	
-	if (mp != currentMediaPlayer)
-	    return
-	
-	currentMediaPlayer = nextMediaPlayer
-	currentMFile = nextMFile
-	
-	enqueueNextMediaPlayer()
+	mutex.withLock {
+	    mp.release()
+	    Log.d("mp=${mp} release")
+	    
+	    if (mp != currentMediaPlayer)
+		return
+	    
+	    if (nextMediaPlayer != null) {
+		currentMediaPlayer = nextMediaPlayer
+		currentMFile = nextMFile
+		Log.d("4currentMFile=${currentMFile}")
+		nextMediaPlayer = null
+		nextMFile = null
+	    }
+	    
+	    enqueueNextMediaPlayer()
+	}
     }
-
+    
+    suspend private fun handleError(mp: MediaPlayer) {
+	mutex.withLock {
+	    mp.release()
+	    Log.d("mp=${mp} release")
+	    
+	    if (mp != currentMediaPlayer)
+		return
+	    
+	    if (nextMediaPlayer != null) {
+		currentMediaPlayer = nextMediaPlayer
+		currentMFile = nextMFile
+		Log.d("5currentMFile=${currentMFile}")
+		val p = currentMediaPlayer
+		if (p != null)
+		    p.start()
+		nextMediaPlayer = null
+		nextMFile = null
+	    }
+	    
+	    enqueueNextMediaPlayer()
+	}
+    }
 
 
     companion object {
