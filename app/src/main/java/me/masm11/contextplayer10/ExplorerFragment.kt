@@ -4,6 +4,8 @@ import androidx.fragment.app.Fragment
 import androidx.constraintlayout.widget.ConstraintLayout
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -17,6 +19,7 @@ import android.widget.BaseAdapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.animation.ObjectAnimator
 
 import kotlinx.coroutines.*
 
@@ -63,23 +66,8 @@ class ExplorerFragment: Fragment() {
 	    val intent = Intent(ctxt, MainService::class.java)
 	    ctxt.startService(intent)
 	    ctxt.bindService(intent, conn, Context.BIND_AUTO_CREATE)
-
-	    val adapter = ItemAdapter(ctxt, MFile("//primary/nana/impact_exciter"))
-	    listView.setAdapter(adapter)
-	    listView.setOnItemClickListener { _, _, pos, _ ->
-		val item = adapter.getItem(pos)
-
-		if (item.isDirectory) {
-		} else {
-		    val b = binder as MainService.Binder
-		    scope.launch {
-			b.jump(item.path)
-		    }
-		}
-	    }
+	    showListView(ctxt, MFile("//primary"), false)
 	}
-
-//	Item(MFile("//primary/nana/impact_exciter/nana_ie_16.ogg"))
     }
     
     override fun onStop() {
@@ -89,7 +77,55 @@ class ExplorerFragment: Fragment() {
 	    ctxt.unbindService(conn)
     }
     
-
+    private fun showListView(ctxt: Context, path: MFile, leaving: Boolean) {
+	val oldListView = listView
+	val parent = oldListView.getParent() as ViewGroup
+	val width = oldListView.getWidth().toFloat()
+	
+	val adapter = ItemAdapter(ctxt, path)
+	
+	listView = ListView(ctxt)
+	listView.setLayoutParams(oldListView.getLayoutParams())
+	parent.addView(listView)
+	
+	listView.setAdapter(adapter)
+	listView.setOnItemClickListener { _, _, pos, _ ->
+	    val item = adapter.getItem(pos)
+	    
+	    if (item.isDirectory) {
+		showListView(ctxt, item.path, item.name == "..")
+	    } else {
+		val b = binder as MainService.Binder
+		scope.launch {
+		    b.jump(item.path)
+		}
+	    }
+	}
+	
+	val time = 200.toLong()
+	if (!leaving) {
+	    ObjectAnimator.ofFloat(listView, "translationX", width, 0f).apply {
+		duration = time
+		start()
+	    }
+	    ObjectAnimator.ofFloat(oldListView, "translationX", 0f, -width).apply {
+		duration = time
+		start()
+	    }
+	} else {
+	    ObjectAnimator.ofFloat(listView, "translationX", -width, 0f).apply {
+		duration = time
+		start()
+	    }
+	    ObjectAnimator.ofFloat(oldListView, "translationX", 0f, width).apply {
+		duration = time
+		start()
+	    }
+	}
+	Handler(Looper.getMainLooper()).postDelayed({ -> parent.removeView(oldListView) }, time)
+    }
+    
+    
     inner class ItemAdapter(private val context: Context, private val dir: MFile): BaseAdapter() {
 	private var layoutInflater: LayoutInflater
 	private val itemList = ArrayList<Item>()
