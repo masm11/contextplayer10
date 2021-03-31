@@ -254,8 +254,8 @@ class MFile(val path: String) {
 	        return null
 	    }
 	    return files.map<File, MFile>{ f ->
-		Log.d("f=\"${f}\"");
-		Log.d("new=\"${path + "/" + f.name}\"");
+		// Log.d("f=\"${f}\"");
+		// Log.d("new=\"${path + "/" + f.name}\"");
 		MFile(path + "/" + f.name)
 	    }.filter{ f ->
 	        if (filter != null) filter(f) else true
