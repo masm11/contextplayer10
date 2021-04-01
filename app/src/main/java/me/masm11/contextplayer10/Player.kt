@@ -298,23 +298,32 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 	}
     }
     
-    suspend private fun handleError(mp: MediaPlayer) {
+    suspend private fun handleError(mp_orig: MediaPlayer) {
 	mutex.withLock {
-	    mp.release()
-	    Log.d("mp=${mp} release")
+	    mp_orig.release()
+	    Log.d("mp=${mp_orig} release")
 	    
-	    if (mp != currentMediaPlayer)
+	    if (mp_orig != currentMediaPlayer)
 		return
 	    
-	    if (nextMediaPlayer != null) {
-		currentMediaPlayer = nextMediaPlayer
-		currentMFile = nextMFile
-		Log.d("5currentMFile=${currentMFile}")
-		val p = currentMediaPlayer
-		if (p != null)
-		    p.start()
-		nextMediaPlayer = null
-		nextMFile = null
+	    var curr = currentMFile
+	    while (true) {
+		Log.d("before curr=${curr}")
+		curr = MFile.selectNext(curr, topDir)
+		
+		Log.d("after curr=${curr}")
+		if (curr == null)
+		    break
+		
+		val mp = createMediaPlayer(curr)
+		if (mp == null)
+		    continue
+		
+		mp.start()
+		currentMediaPlayer = mp
+		currentMFile = curr
+		Log.d("3currentMFile=${currentMFile}")
+		break
 	    }
 	    
 	    enqueueNextMediaPlayer()
