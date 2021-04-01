@@ -91,7 +91,7 @@ class Metadata(private val path: String) {
     private inner class Extractor_Ogg: Extractor {
 	override fun extract(): Boolean {
 	    try {
-		return BufferedInputStream(FileInputStream(path)).use<BufferedInputStream, Boolean> {
+		BufferedInputStream(FileInputStream(path)).use<BufferedInputStream, Boolean> {
 		    if (it.read() != 'O'.toInt())
 			return false
 		    if (it.read() != 'g'.toInt())
@@ -170,7 +170,7 @@ class Metadata(private val path: String) {
     private inner class Extractor_ID3v2: Extractor {
 	override fun extract(): Boolean {
 	    try {
-		return BufferedInputStream(FileInputStream(path)).use<BufferedInputStream, Boolean> {
+		BufferedInputStream(FileInputStream(path)).use<BufferedInputStream, Boolean> {
 		    if (it.read() != 'I'.toInt())
 			return false
 		    if (it.read() != 'D'.toInt())
