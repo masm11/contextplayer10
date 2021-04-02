@@ -18,6 +18,7 @@ package me.masm11.contextplayer10
 
 import android.media.MediaMetadataRetriever
 
+import java.io.File
 import java.io.FileInputStream
 import java.io.BufferedInputStream
 import java.io.UnsupportedEncodingException
@@ -35,16 +36,13 @@ class Metadata(private val path: String) {
         private set
 
     suspend fun extract(): Boolean {
-	var r = false
-	withContext(Dispatchers.Default) {
-            if (Extractor_Ogg().extract())
-		r = true
-            else if (Extractor_ID3v2().extract())
-		r = true
-            else if (Extractor_Other().extract())
-		r = true
+	if (File(path).isDirectory())
+	    return false
+	return withContext(Dispatchers.Default) {
+	    Extractor_Ogg().extract() ||
+	    Extractor_ID3v2().extract() ||
+	    Extractor_Other().extract()
 	}
-	return r
     }
     
     private interface Extractor {
