@@ -9,6 +9,7 @@ import android.media.MediaPlayer
 import android.media.AudioManager
 import android.media.AudioAttributes
 import android.net.Uri
+import android.widget.Toast
 
 import java.io.File
 import java.util.Locale
@@ -264,8 +265,24 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 			handleCompletion(p)
 		    }
 		}
-		mp.setOnErrorListener { p, _, _ ->
-		    Log.d("error ${p}")
+		mp.setOnErrorListener { p, what, extra ->
+		    val what_str = when (what) {
+		      MediaPlayer.MEDIA_ERROR_UNKNOWN -> "unknown"
+		      MediaPlayer.MEDIA_ERROR_SERVER_DIED -> "server_died"
+		      else -> "???"
+		    }
+		    val extra_str = when (extra) {
+		      MediaPlayer.MEDIA_ERROR_IO -> "io"
+		      MediaPlayer.MEDIA_ERROR_MALFORMED -> "malformed"
+		      MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> "unsupported"
+		      MediaPlayer.MEDIA_ERROR_TIMED_OUT -> "timeout"
+//		      MediaPlayer.MEDIA_ERROR_SYSTEM -> "system"
+		      else -> "???"
+		    }
+
+		    val detail = "what=${what}(${what_str}), extra=${extra}(${extra_str})"
+		    Log.d("error ${p}, ${detail}")
+		    Toast.makeText(context, detail, Toast.LENGTH_LONG).show()
 		    scope.launch {
 			handleError(p)
 		    }
