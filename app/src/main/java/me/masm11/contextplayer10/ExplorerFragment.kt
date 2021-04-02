@@ -101,6 +101,18 @@ class ExplorerFragment: Fragment() {
 		}
 	    }
 	}
+	listView.setOnItemLongClickListener { _, _, pos, _ ->
+	    val item = adapter.getItem(pos)
+	    
+	    if (item.isDirectory) {
+		val b = binder as MainService.Binder
+		scope.launch {
+		    b.setTopDir(item.path)
+		}
+		true
+	    } else
+		false
+	}
 	
 	val time = 200.toLong()
 	if (!leaving) {

@@ -150,6 +150,9 @@ class MainService : Service() {
 	fun seek(msec: Long) {
 	    handleSeek(msec)
 	}
+	suspend fun setTopDir(topDir: MFile) {
+	    handleSetTopDir(topDir)
+	}
 	fun setOnPlayStatusBroadcastedListener(listener: OnPlayStatusBroadcastListener) {
 	    onPlayStatusBroadcastListeners.put(listener, true)
 	}
@@ -199,6 +202,10 @@ class MainService : Service() {
 
     private fun handleSeek(msec: Long) {
 	player.seekTo(msec)
+    }
+    
+    suspend private fun handleSetTopDir(topDir: MFile) {
+	player.setTopDir(topDir)
     }
     
     private fun saveContext(block: Boolean) {
