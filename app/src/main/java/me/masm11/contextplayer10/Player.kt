@@ -246,17 +246,17 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		}
 		mp.setOnErrorListener { p, what, extra ->
 		    val what_str = when (what) {
-		      MediaPlayer.MEDIA_ERROR_UNKNOWN -> "unknown"
-		      MediaPlayer.MEDIA_ERROR_SERVER_DIED -> "server_died"
-		      else -> "???"
+			MediaPlayer.MEDIA_ERROR_UNKNOWN -> "unknown"
+			MediaPlayer.MEDIA_ERROR_SERVER_DIED -> "server_died"
+			else -> "???"
 		    }
 		    val extra_str = when (extra) {
-		      MediaPlayer.MEDIA_ERROR_IO -> "io"
-		      MediaPlayer.MEDIA_ERROR_MALFORMED -> "malformed"
-		      MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> "unsupported"
-		      MediaPlayer.MEDIA_ERROR_TIMED_OUT -> "timeout"
-//		      MediaPlayer.MEDIA_ERROR_SYSTEM -> "system"
-		      else -> "???"
+			MediaPlayer.MEDIA_ERROR_IO -> "io"
+			MediaPlayer.MEDIA_ERROR_MALFORMED -> "malformed"
+			MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> "unsupported"
+			MediaPlayer.MEDIA_ERROR_TIMED_OUT -> "timeout"
+			// MediaPlayer.MEDIA_ERROR_SYSTEM -> "system"
+			else -> "???"
 		    }
 
 		    val detail = "what=${what}(${what_str}), extra=${extra}(${extra_str})"
