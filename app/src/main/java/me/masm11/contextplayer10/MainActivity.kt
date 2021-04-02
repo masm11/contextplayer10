@@ -1,6 +1,7 @@
 package me.masm11.contextplayer10
 
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.FragmentActivity
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Handler
@@ -18,7 +19,7 @@ import android.animation.ValueAnimator
 
 import kotlinx.coroutines.*
 
-class MainActivity: AppCompatActivity() {
+class MainActivity: FragmentActivity() {
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private var binder: MainService.Binder? = null
     
@@ -50,6 +51,8 @@ class MainActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 	
+	switchToMain()
+	
 	val intent = Intent(this, MainService::class.java)
 	startService(intent)
     }
@@ -64,5 +67,21 @@ class MainActivity: AppCompatActivity() {
     override fun onStop() {
 	super.onStop()
 	unbindService(conn)
+    }
+
+    fun switchToMain() {
+	val fragmentManager = getSupportFragmentManager()
+	val transaction = fragmentManager.beginTransaction()
+	transaction.addToBackStack(null)
+	transaction.replace(R.id.container, MainFragment())
+	transaction.commit()
+    }
+    
+    fun switchToExplorer() {
+	val fragmentManager = getSupportFragmentManager()
+	val transaction = fragmentManager.beginTransaction()
+	transaction.addToBackStack(null)
+	transaction.replace(R.id.container, ExplorerFragment())
+	transaction.commit()
     }
 }

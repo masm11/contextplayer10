@@ -65,6 +65,12 @@ class MainFragment: Fragment() {
 	textView_path = view.findViewById<TextView>(R.id.path)
 	textView_title = view.findViewById<TextView>(R.id.title)
 	textView_artist = view.findViewById<TextView>(R.id.artist)
+
+	textView_title.setOnClickListener {
+	    Log.d("click on title")
+	    val ctxt = getContext() as MainActivity
+	    ctxt.switchToExplorer()
+	}
     }
     
     override fun onStart() {
