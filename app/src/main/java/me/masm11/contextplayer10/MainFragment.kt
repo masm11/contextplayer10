@@ -80,6 +80,9 @@ class MainFragment: Fragment() {
 	    val intent = Intent(ctxt, MainService::class.java)
 	    ctxt.bindService(intent, conn, Context.BIND_AUTO_CREATE)
 	}
+	cache_path = null
+	cache_title = null
+	cache_artist = null
     }
     
     override fun onStop() {
@@ -88,7 +91,7 @@ class MainFragment: Fragment() {
 	if (ctxt != null)
 	    ctxt.unbindService(conn)
     }
-
+    
     suspend private fun updateInfo(playStatus: Player.PlayStatus) {
 	val file = playStatus.file
 	if (file.toString() != cache_path) {
