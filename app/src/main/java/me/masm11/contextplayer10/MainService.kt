@@ -153,6 +153,18 @@ class MainService : Service() {
 	suspend fun setTopDir(topDir: MFile) {
 	    handleSetTopDir(topDir)
 	}
+	fun switchContext() {
+	    stopBroadcaster()
+	    playingContextUuid = PlayContextStore.getPlayingUuid()
+	    playingContext = PlayContextStore.find(playingContextUuid)
+	    val path = playingContext?.path
+	    if (path != null) {
+		runBlocking {
+		    handleJump(MFile(path))
+		}
+	    }
+	    startBroadcaster()
+	}
 	fun setOnPlayStatusBroadcastedListener(listener: OnPlayStatusBroadcastListener) {
 	    onPlayStatusBroadcastListeners.put(listener, true)
 	}

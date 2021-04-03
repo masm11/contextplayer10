@@ -81,6 +81,10 @@ class PlayContextStore {
 	    return config.playingUuid
 	}
 	
+	fun setPlayingUuid(uuid: String) {
+	    config.playingUuid = uuid
+	}
+
 	fun save(save_msec: Boolean = true) {
 	    val pref = context.getSharedPreferences(KEY_STORAGE, Context.MODE_PRIVATE)
 	    var currJson = pref.getString(KEY_PLAY_CONTEXT_CONFIG, null)

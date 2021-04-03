@@ -70,6 +70,13 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	    listView.setAdapter(adapter)
 	    
 	    listView.setOnItemClickListener { _, _, pos, _ ->
+		val item = adapter.getItem(pos)
+		PlayContextStore.setPlayingUuid(item.uuid)
+		PlayContextStore.save(true)
+		
+		val b = binder as MainService.Binder
+		if (b != null)
+		    b.switchContext()
 	    }
 	    listView.setOnItemLongClickListener { _, _, pos, _ ->
 		val item = adapter.getItem(pos)
