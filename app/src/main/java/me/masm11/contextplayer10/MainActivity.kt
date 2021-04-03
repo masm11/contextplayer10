@@ -72,7 +72,7 @@ class MainActivity: FragmentActivity() {
     fun switchToMain() {
 	val fragmentManager = getSupportFragmentManager()
 	val transaction = fragmentManager.beginTransaction()
-	transaction.addToBackStack(null)
+//	transaction.addToBackStack(null)
 	transaction.replace(R.id.container, MainFragment())
 	transaction.commit()
     }
