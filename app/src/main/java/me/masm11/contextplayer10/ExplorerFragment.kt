@@ -161,6 +161,7 @@ class ExplorerFragment: Fragment() {
 			files.add(Item(m, this))
 		}
 	    }
+	    itemList.add(Item(dir, this, dir.toString()))
 	    if (dir.toString() != "//")
 		itemList.add(Item(dir.parentFile, this, ".."))
 	    itemList.addAll(dirs)
