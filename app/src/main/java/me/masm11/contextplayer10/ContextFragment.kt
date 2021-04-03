@@ -38,11 +38,8 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
     // GC に破棄されないよう、変数に持っておく
     private val listener = object: MainService.OnPlayStatusBroadcastListener {
 	override fun onPlayStatusBroadcastListener(playStatus: Player.PlayStatus) {
-/*
-	    scope.launch {
-		updateInfo(playStatus)
-	    }
-*/
+	    val adapter = listView.getAdapter() as ContextAdapter
+	    adapter.reloadList()
 	}
     }
     
