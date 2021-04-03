@@ -98,6 +98,10 @@ class MainFragment: Fragment() {
     }
     
     suspend private fun updateInfo(playStatus: Player.PlayStatus) {
+	val uuid = PlayContextStore.getPlayingUuid()
+	val ctxt = PlayContextStore.find(uuid)
+	textView_contextName.setText(ctxt.name)
+	
 	val file = playStatus.file
 	if (file.toString() != cache_path) {
 	    cache_path = file.toString()
@@ -115,9 +119,9 @@ class MainFragment: Fragment() {
 		cache_title = "不明なタイトル"
 	    if (cache_artist == null)
 		cache_artist = "不明なアーティスト"
-	    textView_path.setText(cache_path)
-	    textView_title.setText(cache_title)
-	    textView_artist.setText(cache_artist)
 	}
+	textView_path.setText(cache_path)
+	textView_title.setText(cache_title)
+	textView_artist.setText(cache_artist)
     }
 }
