@@ -13,13 +13,13 @@
       android:text="default context"
       android:textSize="24sp"
       app:layout_constraintTop_toTopOf="parent"
-      app:layout_constraintBottom_toTopOf="@+id/track_info"
+      app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintLeft_toLeftOf="parent"
       app:layout_constraintRight_toRightOf="parent"
-      app:layout_constraintVertical_bias="0.3333" />
+      app:layout_constraintVertical_bias="0.1667" />
   
   <LinearLayout
-      android:id="@id/track_info"
+      android:id="@+id/track_info"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:orientation="vertical"
