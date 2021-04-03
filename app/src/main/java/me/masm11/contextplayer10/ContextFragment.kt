@@ -78,6 +78,22 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		true
 	    }
 	}
+	
+	val fab = view.findViewById<View>(R.id.fab)
+	fab.setOnClickListener { _ ->
+	    val fragment = InputNameDialogFragment()
+	    fragment.setAction { newName ->
+		val list = PlayContextStore.loadAll()
+		val maxDisplayOrder = list.map<PlayContext, Int> { i -> i.displayOrder }.max()
+		val newDisplayOrder = if (maxDisplayOrder == null) 1 else maxDisplayOrder + 1
+		val i = PlayContext("0001", newName, "//primary", null, 0, newDisplayOrder)
+		list.add(i)
+		PlayContextStore.save(true)
+		val adapter = listView.getAdapter() as ContextAdapter
+		adapter.reloadList()
+	    }
+	    fragment.show(supportFragmentManager, "action_selection")
+	}
     }
     
     override fun onStart() {
@@ -155,8 +171,17 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	}
 	
 	private fun editContext() {
-	    val fragment = ContextEditDialogFragment(adapter, item)
-	    fragment.show(supportFragmentManager, "action_selection")
+	    val fragment = InputNameDialogFragment(item.name)
+	    fragment.setAction { newName ->
+		val list = PlayContextStore.loadAll()
+		val i = list.find { i -> i.uuid == item.uuid }
+		if (i != null)
+		    i.name = newName
+		PlayContextStore.save(true)
+		adapter.reloadList()
+	    }
+
+	    fragment.show(supportFragmentManager, "input_name")
 	}
 	
 	private fun deleteContext() {
@@ -167,12 +192,23 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		val i = list.find { i -> i.uuid == item.uuid }
 		if (i != null)
 		    list.remove(i)
+		PlayContextStore.save(true)
 		adapter.reloadList()
 	    }
 	}
     }
 
-    class ContextEditDialogFragment(private val adapter: ContextAdapter, private val item: PlayContext) : DialogFragment() {
+    class InputNameDialogFragment(private val initialName: String? = null) : DialogFragment() {
+	private var action: (String) -> Unit
+
+	init {
+	    action = { newName -> }
+	}
+	
+	fun setAction(action: (String) -> Unit) {
+	    this.action = action
+	}
+	
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 	    return activity?.let {
 		val builder = AlertDialog.Builder(it)
@@ -181,16 +217,13 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		val view = inflater.inflate(R.layout.dialog_edit_context, null)
 		val editText = view.findViewById<EditText>(R.id.new_name)
 		
-		editText.setText(item.name)
+		if (initialName != null)
+		    editText.setText(initialName)
 		builder.setView(view)
                 builder.setPositiveButton("OK",
 		DialogInterface.OnClickListener { dialog, id ->
-		    val newName = editText.getText()
-		    val list = PlayContextStore.loadAll()
-		    val i = list.find { i -> i.uuid == item.uuid }
-		    if (i != null)
-			i.name = newName.toString()
-		    adapter.reloadList()
+		    val newName = editText.getText().toString()
+		    action(newName)
                 })
                 builder.setNegativeButton("Cancel",
                 DialogInterface.OnClickListener { dialog, id ->
