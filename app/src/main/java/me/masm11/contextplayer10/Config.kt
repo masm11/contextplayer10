@@ -6,6 +6,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
 import android.content.Context
+import android.widget.Toast
 
 import java.util.UUID
 
@@ -16,6 +17,7 @@ class PlayContext (
     var topDir: String,
     var path: String?,
     var msec: Long,
+    var displayOrder: Int,
 )
 
 @Serializable
@@ -38,7 +40,9 @@ class PlayContextStore {
                 "uuid":"0000",
                 "name":"default",
                 "topDir":"//primary",
-                "path":null,"msec":0
+                "path":null,
+                "msec":0,
+                "displayOrder":1
               }
             ],
             "playingUuid":"0000"
@@ -53,7 +57,12 @@ class PlayContextStore {
 	    if (json == null)
 		json = INITIAL_JSON
 	    Log.d("json1-1: ${json}")
-	    config = Json.decodeFromString(json)
+	    try {
+		config = Json.decodeFromString(json)
+	    } catch (e: Exception) {
+		Toast.makeText(context, "初期化しました", Toast.LENGTH_SHORT).show()
+		config = Json.decodeFromString(INITIAL_JSON)
+	    }
 	    
 	    Log.d(config.list::class.toString())
 	}
@@ -62,7 +71,7 @@ class PlayContextStore {
 	    try {
 		return config.list.first { c -> c.uuid == uuid }
 	    } catch (e: NoSuchElementException) {
-		val new = PlayContext(uuid, "default", "//primary", null, 0)
+		val new = PlayContext(uuid, "default", "//primary", null, 0, 1)
 		config.list.add(new)
 		return new
 	    }
@@ -108,6 +117,10 @@ class PlayContextStore {
 	    // Log.d("json1:  ${json1}")
 	    // Log.d("json22: ${json22}")
 	    return json1 != json22
+	}
+	
+	fun loadAll(): MutableList<PlayContext> {
+	    return config.list
 	}
     }
 }

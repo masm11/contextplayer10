@@ -84,4 +84,12 @@ class MainActivity: FragmentActivity() {
 	transaction.replace(R.id.container, ExplorerFragment())
 	transaction.commit()
     }
+    
+    fun switchToContext() {
+	val fragmentManager = getSupportFragmentManager()
+	val transaction = fragmentManager.beginTransaction()
+	transaction.addToBackStack(null)
+	transaction.replace(R.id.container, ContextFragment(fragmentManager))
+	transaction.commit()
+    }
 }

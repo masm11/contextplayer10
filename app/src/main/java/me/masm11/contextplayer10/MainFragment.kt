@@ -66,6 +66,11 @@ class MainFragment: Fragment() {
 	textView_title = view.findViewById<TextView>(R.id.title)
 	textView_artist = view.findViewById<TextView>(R.id.artist)
 
+	view.findViewById<View>(R.id.context_name).setOnClickListener {
+	    Log.d("click on title")
+	    val ctxt = getContext() as MainActivity
+	    ctxt.switchToContext()
+	}
 	view.findViewById<View>(R.id.track_info).setOnClickListener {
 	    Log.d("click on title")
 	    val ctxt = getContext() as MainActivity
