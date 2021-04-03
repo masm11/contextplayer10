@@ -61,6 +61,8 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		mp.player.start()
 	    current = mp
 	    Log.d("jumpTo: current.file=${current?.file}")
+	    if (playing)
+		enqueueNextMediaPlayer()
 	}
     }
     
