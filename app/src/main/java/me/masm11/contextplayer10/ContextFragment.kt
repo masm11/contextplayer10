@@ -4,6 +4,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import android.os.Bundle
 import android.os.IBinder
 import android.os.Handler
@@ -35,13 +38,14 @@ import kotlinx.coroutines.*
 class ContextFragment(private val supportFragmentManager: FragmentManager): Fragment() {
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private var binder: MainService.Binder? = null
-    private lateinit var listView: ListView
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var itemTouchHelper: ItemTouchHelper
     
     // GC に破棄されないよう、変数に持っておく
     private val listener = object: MainService.OnPlayStatusBroadcastListener {
 	override fun onPlayStatusBroadcastListener(playStatus: Player.PlayStatus) {
-	    val adapter = listView.getAdapter() as ContextAdapter
-	    adapter.reloadList()
+	    val adapter = recyclerView.getAdapter() as ContextAdapter
+//	    adapter.reloadList()
 	}
     }
     
@@ -62,24 +66,58 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	return inflater.inflate(R.layout.context_fragment, container, false)
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-	listView = view.findViewById<ListView>(R.id.list_view)
+	recyclerView = view.findViewById<RecyclerView>(R.id.recycler_view)
 	val ctxt = getContext()
 	if (ctxt != null) {
 	    val adapter = ContextAdapter(ctxt)
-	    listView.setAdapter(adapter)
+	    recyclerView.setLayoutManager(LinearLayoutManager(ctxt))
+	    recyclerView.setAdapter(adapter)
 	    
-	    listView.setOnItemClickListener { _, _, pos, _ ->
-		val item = adapter.getItem(pos)
-		PlayContextStore.setPlayingUuid(item.uuid)
+	    val cb = object: ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+		// ドラッグしたときに呼ばれる
+		override fun onMove(p0: RecyclerView, p1: RecyclerView.ViewHolder, p2: RecyclerView.ViewHolder): Boolean {
+		    
+                    // どこからどこへアイテムが移動するのか
+                    val fromPosition = p1.adapterPosition
+                    val toPosition = p2.adapterPosition
+		    
+		    Log.d("from=${fromPosition}, to=${toPosition}")
+
+		    adapter.reorder(fromPosition, toPosition)
+
+                    /*
+                    * ドラッグ時、viewType が異なるアイテムを超えるときに、
+                    * notifyItemMoved を呼び出すと、ドラッグ操作がキャンセルされてしまう。
+                    * （ドラッグは同じviewTypeを持つアイテム間で行う必要がある模様）
+                    *
+                    * 同じ ViewType アイテムを超える時だけ notifyItemMoved を呼び出す。
+                    * */
+/*
+                    if (p1.itemViewType == p2.itemViewType) {
+			// Adapter の持つ実データセットを操作している
+			myDataSet.add(toPosition, myDataSet.removeAt(fromPosition))
+			// Adapter にアイテムが移動したことを通知
+			viewAdapter.notifyItemMoved(fromPosition, toPosition)
+                    }
+*/
+		    
+                    return true
+		}
+		override fun onSwiped(p0: RecyclerView.ViewHolder, p1: Int) {
+		}
+ 	    }
+	    
+	    itemTouchHelper = ItemTouchHelper(cb)
+	    itemTouchHelper.attachToRecyclerView(recyclerView)
+	    
+	    adapter.setOnClickListener { c ->
+		PlayContextStore.setPlayingUuid(c.uuid)
 		PlayContextStore.save(true)
 		
-		val b = binder as MainService.Binder
-		if (b != null)
-		    b.switchContext()
+		binder?.switchContext()
 	    }
-	    listView.setOnItemLongClickListener { _, _, pos, _ ->
-		val item = adapter.getItem(pos)
-		val fragment = ActionSelectionDialogFragment(adapter, item, supportFragmentManager)
+	    adapter.setOnLongClickListener { c ->
+		val fragment = ActionSelectionDialogFragment(adapter, c, supportFragmentManager)
 		fragment.show(supportFragmentManager, "action_selection")
 		true
 	    }
@@ -90,12 +128,12 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	    val fragment = InputNameDialogFragment()
 	    fragment.setAction { newName ->
 		val list = PlayContextStore.loadAll()
-		val maxDisplayOrder = list.map<PlayContext, Int> { i -> i.displayOrder }.max()
+		val maxDisplayOrder = list.map<PlayContext, Int> { i -> i.displayOrder }.maxOrNull()
 		val newDisplayOrder = if (maxDisplayOrder == null) 1 else maxDisplayOrder + 1
 		val i = PlayContext(UUID.randomUUID().toString(), newName, "//primary", null, 0, newDisplayOrder)
 		list.add(i)
 		PlayContextStore.save(true)
-		val adapter = listView.getAdapter() as ContextAdapter
+		val adapter = recyclerView.getAdapter() as ContextAdapter
 		adapter.reloadList()
 	    }
 	    fragment.show(supportFragmentManager, "action_selection")
@@ -120,37 +158,103 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
     }
     
     
-    inner class ContextAdapter(private val context: Context): BaseAdapter() {
-	private var layoutInflater: LayoutInflater
+    class ContextAdapter(private val context: Context): RecyclerView.Adapter<ContextAdapter.ViewHolder>() {
 	private lateinit var contextList: List<PlayContext>
+	private var onClick: (PlayContext) -> Unit = { c -> }
+	private var onLongClick: (PlayContext) -> Boolean = { c -> false }
 	
 	init {
-	    layoutInflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 	    reloadList()
+	    Log.d("count=${contextList.count()}")
 	}
 	
-	override fun getCount(): Int {
-	    return contextList.count()
+	fun setOnClickListener(onClick: (PlayContext) -> Unit) {
+	    this.onClick = onClick
 	}
-	override fun getItem(pos: Int): PlayContext {
-	    return contextList[pos]
+	
+	fun setOnLongClickListener(onLongClick: (PlayContext) -> Boolean) {
+	    this.onLongClick = onLongClick
 	}
-	override fun getItemId(pos: Int): Long {
-	    return getItem(pos).uuid.hashCode().toLong()
-	}
-	override fun getView(pos: Int, convertView: View?, parent: ViewGroup): View {
-	    val view = if (convertView == null) layoutInflater.inflate(R.layout.context_item, parent, false) else convertView
+	
+	class ViewHolder(view: View): RecyclerView.ViewHolder(view) {
+	    val textView_name: TextView
+	    val textView_topDir: TextView
+	    val textView_path: TextView
+	    private lateinit var ctxt: PlayContext
+	    private var onClick: (PlayContext) -> Unit = { c -> }
+	    private var onLongClick: (PlayContext) -> Boolean = { c -> false }
+	    init {
+		textView_name = view.findViewById<TextView>(R.id.name)
+		textView_topDir = view.findViewById<TextView>(R.id.top_dir)
+		textView_path = view.findViewById<TextView>(R.id.path)
+		
+		view.setOnClickListener { v -> onClick(ctxt) }
+//		view.setOnLongClickListener { v -> onLongClick(ctxt) }
+	    }
 	    
-	    val ctxt = getItem(pos)
-	    view.findViewById<TextView>(R.id.name).setText(ctxt.name)
-	    view.findViewById<TextView>(R.id.top_dir).setText(ctxt.topDir)
-	    view.findViewById<TextView>(R.id.path).setText(ctxt.path)
-            return view
+	    fun setOnClickListener(onClick: (PlayContext) -> Unit) {
+		this.onClick = onClick
+	    }
+	    fun setOnLongClickListener(onLongClick: (PlayContext) -> Boolean) {
+		this.onLongClick = onLongClick
+	    }
+	    fun bind(ctxt: PlayContext) {
+		this.ctxt = ctxt
+	    }
 	}
-
+	
+	// Create new views (invoked by the layout manager)
+	override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+            // Create a new view, which defines the UI of the list item
+            val view = LayoutInflater.from(viewGroup.context)
+                .inflate(R.layout.context_item, viewGroup, false)
+	    
+            return ViewHolder(view).apply {
+		setOnClickListener(onClick)
+		setOnLongClickListener(onLongClick)
+	    }
+	}
+	
+	// Replace the contents of a view (invoked by the layout manager)
+	override fun onBindViewHolder(viewHolder: ViewHolder, pos: Int) {
+	    val ctxt = contextList[pos]
+	    viewHolder.textView_name.text = ctxt.name
+	    viewHolder.textView_topDir.text = ctxt.topDir
+	    viewHolder.textView_path.text = ctxt.path
+	    
+	    viewHolder.bind(ctxt)
+	}
+	
+	// Return the size of your dataset (invoked by the layout manager)
+	override fun getItemCount() = contextList.count()
+	
 	fun reloadList() {
+	    Log.d("reload")
 	    contextList = PlayContextStore.loadAll().sortedBy { a -> a.displayOrder }
 	    notifyDataSetChanged()
+	}
+	fun reorder(fromPos: Int, toPos: Int) {
+	    val list = mutableListOf<PlayContext>()
+	    contextList.forEach { c -> list.add(c) }
+	    Log.d("---- before")
+	    list.forEach { c ->
+		Log.d("${c.displayOrder} ${c.name}")
+	    }
+	    Log.d("---- before")
+	    
+	    list.add(toPos, list.removeAt(fromPos))
+	    
+	    var displayOrder = 1
+	    list.forEach { c -> c.displayOrder = displayOrder++ }
+	    Log.d("==== after")
+	    list.forEach { c ->
+		Log.d("${c.displayOrder} ${c.name}")
+	    }
+	    Log.d("==== after")
+	    PlayContextStore.save(true)
+	    
+	    contextList = PlayContextStore.loadAll().sortedBy { a -> a.displayOrder }
+	    notifyItemMoved(fromPos, toPos)
 	}
     }
     
