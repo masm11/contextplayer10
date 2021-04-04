@@ -28,6 +28,8 @@ import android.app.Dialog
 import android.app.AlertDialog
 import android.content.DialogInterface
 
+import java.util.UUID
+
 import kotlinx.coroutines.*
 
 class ContextFragment(private val supportFragmentManager: FragmentManager): Fragment() {
@@ -90,7 +92,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		val list = PlayContextStore.loadAll()
 		val maxDisplayOrder = list.map<PlayContext, Int> { i -> i.displayOrder }.max()
 		val newDisplayOrder = if (maxDisplayOrder == null) 1 else maxDisplayOrder + 1
-		val i = PlayContext("0001", newName, "//primary", null, 0, newDisplayOrder)
+		val i = PlayContext(UUID.randomUUID().toString(), newName, "//primary", null, 0, newDisplayOrder)
 		list.add(i)
 		PlayContextStore.save(true)
 		val adapter = listView.getAdapter() as ContextAdapter
