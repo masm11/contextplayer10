@@ -157,9 +157,12 @@ class MainService : Service() {
 	    stopBroadcaster()
 	    playingContextUuid = PlayContextStore.getPlayingUuid()
 	    playingContext = PlayContextStore.find(playingContextUuid)
-	    val path = playingContext?.path
+	    val ctxt = playingContext
+	    val topDir = ctxt.topDir
+	    val path = ctxt.path
 	    if (path != null) {
 		runBlocking {
+		    handleSetTopDir(MFile(topDir))
 		    handleJump(MFile(path))
 		}
 	    }
