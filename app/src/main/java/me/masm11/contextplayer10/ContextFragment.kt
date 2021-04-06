@@ -74,36 +74,18 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	    recyclerView.setAdapter(adapter)
 	    
 	    val cb = object: ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
-		// ドラッグしたときに呼ばれる
 		override fun onMove(p0: RecyclerView, p1: RecyclerView.ViewHolder, p2: RecyclerView.ViewHolder): Boolean {
-		    
-                    // どこからどこへアイテムが移動するのか
-                    val fromPosition = p1.adapterPosition
-                    val toPosition = p2.adapterPosition
-		    
+                    val fromPosition = p1.adapterPosition	// 移動元
+                    val toPosition = p2.adapterPosition		// 移動先
 		    Log.d("from=${fromPosition}, to=${toPosition}")
-
 		    adapter.reorder(fromPosition, toPosition)
-
-                    /*
-                    * ドラッグ時、viewType が異なるアイテムを超えるときに、
-                    * notifyItemMoved を呼び出すと、ドラッグ操作がキャンセルされてしまう。
-                    * （ドラッグは同じviewTypeを持つアイテム間で行う必要がある模様）
-                    *
-                    * 同じ ViewType アイテムを超える時だけ notifyItemMoved を呼び出す。
-                    * */
-/*
-                    if (p1.itemViewType == p2.itemViewType) {
-			// Adapter の持つ実データセットを操作している
-			myDataSet.add(toPosition, myDataSet.removeAt(fromPosition))
-			// Adapter にアイテムが移動したことを通知
-			viewAdapter.notifyItemMoved(fromPosition, toPosition)
-                    }
-*/
-		    
                     return true
 		}
 		override fun onSwiped(p0: RecyclerView.ViewHolder, p1: Int) {
+		}
+		
+		override fun isLongPressDragEnabled(): Boolean {
+		    return (getContext() as MainActivity).getContextListActionMode()
 		}
  	    }
 	    
@@ -117,9 +99,12 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		binder?.switchContext()
 	    }
 	    adapter.setOnLongClickListener { c ->
-		val fragment = ActionSelectionDialogFragment(adapter, c, supportFragmentManager)
-		fragment.show(supportFragmentManager, "action_selection")
-		true
+		if (!(getContext() as MainActivity).getContextListActionMode()) {
+		    val fragment = ActionSelectionDialogFragment(adapter, c, supportFragmentManager)
+		    fragment.show(supportFragmentManager, "action_selection")
+		    true
+		} else
+		    false
 	    }
 	}
 	
@@ -157,6 +142,12 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	    ctxt.unbindService(conn)
     }
     
+    override fun onDestroy() {
+	Log.d("ContextFragment.onDestroy")
+	(getContext() as MainActivity).back()
+	super.onDestroy()
+    }
+    
     
     class ContextAdapter(private val context: Context): RecyclerView.Adapter<ContextAdapter.ViewHolder>() {
 	private lateinit var contextList: List<PlayContext>
@@ -189,7 +180,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		textView_path = view.findViewById<TextView>(R.id.path)
 		
 		view.setOnClickListener { v -> onClick(ctxt) }
-//		view.setOnLongClickListener { v -> onLongClick(ctxt) }
+		view.setOnLongClickListener { v -> onLongClick(ctxt) }
 	    }
 	    
 	    fun setOnClickListener(onClick: (PlayContext) -> Unit) {

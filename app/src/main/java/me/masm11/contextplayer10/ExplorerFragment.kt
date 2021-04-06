@@ -77,6 +77,13 @@ class ExplorerFragment: Fragment() {
 	    ctxt.unbindService(conn)
     }
     
+    override fun onDestroy() {
+	Log.d("ExplorerFragment.onDestroy")
+	(getContext() as MainActivity).back()
+	super.onDestroy()
+    }
+    
+    
     private fun showListView(ctxt: Context, path: MFile, leaving: Boolean) {
 	val oldListView = listView
 	val parent = oldListView.getParent() as ViewGroup

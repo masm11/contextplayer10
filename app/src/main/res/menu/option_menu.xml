@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto" >
+  
+  <item
+      android:id="@+id/action_drag_mode"
+      android:icon="@drawable/baseline_swap_vert_24"
+      android:title="drag mode"
+      app:showAsAction="ifRoom"/>
+  
+  <item
+      android:id="@+id/action_edit_mode"
+      android:icon="@drawable/baseline_mode_edit_24"
+      android:title="edit mode"
+      app:showAsAction="ifRoom"/>
+  
+</menu>
