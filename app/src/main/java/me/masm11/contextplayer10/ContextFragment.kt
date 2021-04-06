@@ -45,7 +45,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
     private val listener = object: MainService.OnPlayStatusBroadcastListener {
 	override fun onPlayStatusBroadcastListener(playStatus: Player.PlayStatus) {
 	    val adapter = recyclerView.getAdapter() as ContextAdapter
-//	    adapter.reloadList()
+	    adapter.refresh()
 	}
     }
     
@@ -153,6 +153,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	private lateinit var contextList: List<PlayContext>
 	private var onClick: (PlayContext) -> Unit = { c -> }
 	private var onLongClick: (PlayContext) -> Boolean = { c -> false }
+	private lateinit var currentUuid: String
 	
 	init {
 	    reloadList()
@@ -219,9 +220,27 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	// Return the size of your dataset (invoked by the layout manager)
 	override fun getItemCount() = contextList.count()
 	
+	fun refresh() {
+	    var curPos: Int? = null
+	    contextList.forEachIndexed { i, c ->
+		if (c.uuid == currentUuid)
+		    notifyItemChanged(i)
+	    }
+	    
+	    var newUuid = PlayContextStore.getPlayingUuid()
+	    if (newUuid != currentUuid) {
+		var newPos: Int? = null
+		contextList.forEachIndexed { i, c ->
+		    if (c.uuid == newUuid)
+			notifyItemChanged(i)
+		}
+		currentUuid = newUuid
+	    }
+	}
 	fun reloadList() {
 	    Log.d("reload")
 	    contextList = PlayContextStore.loadAll().sortedBy { a -> a.displayOrder }
+	    currentUuid = PlayContextStore.getPlayingUuid()
 	    notifyDataSetChanged()
 	}
 	fun reorder(fromPos: Int, toPos: Int) {
