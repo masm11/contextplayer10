@@ -46,8 +46,6 @@ class MainService : Service() {
     override fun onCreate() {
 	super.onCreate()
 	
-	PlayContextStore.load(this)
-	
 	playingContextUuid = PlayContextStore.getPlayingUuid()
 	playingContext = PlayContextStore.find(playingContextUuid)
 	

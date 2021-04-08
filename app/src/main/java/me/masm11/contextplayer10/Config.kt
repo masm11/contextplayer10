@@ -49,7 +49,7 @@ class PlayContextStore {
           }
         """
 	
-	fun load(context: Context) {
+	fun init(context: Context) {
 	    this.context = context
 	    val pref = context.getSharedPreferences(KEY_STORAGE, Context.MODE_PRIVATE)
 	    var json = pref.getString(KEY_PLAY_CONTEXT_CONFIG, null)
