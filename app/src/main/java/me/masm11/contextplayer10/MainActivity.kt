@@ -123,9 +123,9 @@ class MainActivity: AppCompatActivity() {
     
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
 	Log.d("onPrepareOptionsMenu")
-	var item = menu.findItem(R.id.action_edit_mode)
+	var item = menu.findItem(R.id.action_drag_mode)
 	item.setVisible(inContextFragment and !contextListActionMode)
-	item = menu.findItem(R.id.action_drag_mode)
+	item = menu.findItem(R.id.action_edit_mode)
 	item.setVisible(inContextFragment and contextListActionMode)
 	return true
     }
@@ -133,12 +133,12 @@ class MainActivity: AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
 	return when (item.itemId) {
 	    R.id.action_edit_mode -> {
-		contextListActionMode = true
+		contextListActionMode = false
 		invalidateOptionsMenu()
 		true
 	    }
 	    R.id.action_drag_mode -> {
-		contextListActionMode = false
+		contextListActionMode = true
 		invalidateOptionsMenu()
 		true
 	    }
