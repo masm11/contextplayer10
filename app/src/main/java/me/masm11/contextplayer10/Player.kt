@@ -57,6 +57,8 @@ class Player(val context: Context, val scope: CoroutineScope, val audioAttribute
 		Log.d("jumpTo: mp_orig=${mp_orig} release")
 	    }
 	    
+	    mp.player.seekTo(msec.toInt())
+	    
 	    if (playing)
 		mp.player.start()
 	    current = mp
