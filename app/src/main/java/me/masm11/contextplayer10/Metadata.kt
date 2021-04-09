@@ -1,5 +1,6 @@
-/* Context Player - Audio Player with Contexts
-    Copyright (C) 2016, 2018 Yuuki Harano
+/*
+    Context Player 10 - Music Player with Context
+    Copyright (C) 2021 Yuuki Harano
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -12,8 +13,9 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
 package me.masm11.contextplayer10
 
 import android.media.MediaMetadataRetriever
