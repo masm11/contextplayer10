@@ -4,6 +4,7 @@
     android:layout_height="match_parent"
     android:layout_margin="0dp"
     android:padding="0dp"
+    android:background="@color/widget_bg"
     android:orientation="horizontal" >
   
   <Button
