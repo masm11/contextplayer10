@@ -56,8 +56,12 @@ class MainActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 	setSupportActionBar(findViewById(R.id.toolbar))
-
-	switchToMain()
+	
+	val startingIntent = getIntent()
+	if (startingIntent != null && startingIntent.action == "me.masm11.contextplayer10.context_list")
+	    switchToContext(true)
+	else
+	    switchToMain(true)
 	
 	val intent = Intent(this, MainService::class.java)
 	startService(intent)
@@ -75,12 +79,13 @@ class MainActivity: AppCompatActivity() {
 	unbindService(conn)
     }
 
-    fun switchToMain() {
+    fun switchToMain(initial: Boolean = false) {
 	inContextFragment = false
 	invalidateOptionsMenu()
 	val fragmentManager = getSupportFragmentManager()
 	val transaction = fragmentManager.beginTransaction()
-//	transaction.addToBackStack(null)
+	if (!initial)
+	    transaction.addToBackStack(null)
 	transaction.replace(R.id.container, MainFragment())
 	transaction.commit()
     }
@@ -95,13 +100,14 @@ class MainActivity: AppCompatActivity() {
 	transaction.commit()
     }
     
-    fun switchToContext() {
+    fun switchToContext(initial: Boolean = false) {
 	inContextFragment = true
 	contextListActionMode = false
 	invalidateOptionsMenu()
 	val fragmentManager = getSupportFragmentManager()
 	val transaction = fragmentManager.beginTransaction()
-	transaction.addToBackStack(null)
+	if (!initial)
+	    transaction.addToBackStack(null)
 	transaction.replace(R.id.container, ContextFragment(fragmentManager))
 	transaction.commit()
     }

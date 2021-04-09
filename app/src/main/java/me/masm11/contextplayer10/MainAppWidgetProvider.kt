@@ -18,7 +18,8 @@ class MainAppWidgetProvider: AppWidgetProvider() {
 	
         appWidgetIds.forEach { appWidgetId ->
 	    val pendingIntent_context = Intent(context, MainActivity::class.java).let { intent ->
-		PendingIntent.getActivity(context, 0, intent, 0)
+		intent.action = "me.masm11.contextplayer10.context_list"
+		PendingIntent.getActivity(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT)
 	    }
 	    // 参考: https://qiita.com/wakwak/items/e8daef3a7a3003bfe360
 	    val pendingIntent_play = Intent(context, MainAppWidgetProvider::class.java).let { intent ->
