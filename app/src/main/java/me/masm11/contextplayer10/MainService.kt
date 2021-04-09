@@ -51,7 +51,11 @@ class MainService : Service() {
 	
 	player.initialize()
 	
-	scope.launch {
+	/* 初期化は runBlocking 内で行う。
+	*  こうしないと、service がいない状態で widget から再生しようとした場合に
+	*  再生できないという問題が起きる。
+	*/
+	runBlocking {
 	    if (playingContext.path == null) {
 		playingContext.path = "//primary/nana/impact_exciter/nana_ie_16.ogg"
 		PlayContextStore.save()
@@ -79,6 +83,13 @@ class MainService : Service() {
     
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
 	Log.d("onStartCommand")
+	if (intent.action == "me.masm11.contextplayer10.play") {
+	    Log.d("onStartCommand: is play.")
+	    scope.launch {
+		Log.d("in coroutine in onStartCommand")
+		handleToggle()
+	    }
+	}
 	return START_NOT_STICKY
     }
     
@@ -201,6 +212,14 @@ class MainService : Service() {
 	}
     }
     
+    suspend private fun handleToggle() {
+	Log.d("handleToggle")
+	if (!playing)
+	    handlePlay()
+	else
+	    handleStop(false)
+    }
+
     suspend private fun handleJump(path: MFile) {
 	player.jumpTo(path, 0)
     }
