@@ -2,7 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="120dp"
     android:minHeight="40dp"
-    android:updatePeriodMillis="86400000"
+    android:updatePeriodMillis="0"
     android:initialLayout="@layout/main_appwidget"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />

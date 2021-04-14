@@ -33,10 +33,10 @@ class MainAppWidgetProvider: AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-	update(context, appWidgetManager, appWidgetIds)
+	update(context, appWidgetManager, appWidgetIds, null, false)
 	super.onUpdate(context, appWidgetManager, appWidgetIds)
     }
-
+    
     override fun onReceive(context: Context, intent: Intent) {
 	Log.d("broadcast onReceive ${intent.action}")
 	if (intent.action == "me.masm11.contextplayer10.play") {
@@ -46,13 +46,12 @@ class MainAppWidgetProvider: AppWidgetProvider() {
 	} else
 	    super.onReceive(context, intent)
     }
-
+    
     companion object {
-	fun update(context: Context, appWidgetManager0: AppWidgetManager? = null, appWidgetIds0: IntArray? = null) {
+	fun update(context: Context, appWidgetManager0: AppWidgetManager?, appWidgetIds0: IntArray?, contextName0: String?, playing: Boolean) {
 	    val appWidgetManager = if (appWidgetManager0 != null) appWidgetManager0 else getAppWidgetManager(context)
 	    val appWidgetIds = if (appWidgetIds0 != null) appWidgetIds0 else getAppWidgetIds(context, appWidgetManager)
-	    
-	    val context_name = getContextName()
+	    val contextName = if (contextName0 != null) contextName0 else getContextName()
 	    
             appWidgetIds.forEach { appWidgetId ->
 		val pendingIntent_context = Intent(context, MainActivity::class.java).let { intent ->
@@ -68,7 +67,8 @@ class MainAppWidgetProvider: AppWidgetProvider() {
 		// Get the layout for the App Widget and attach an on-click listener
 		// to the button
 		val views = RemoteViews(context.packageName, R.layout.main_appwidget).apply {
-		    setTextViewText(R.id.context_name, context_name)
+		    setTextViewText(R.id.context_name, contextName)
+		    setTextViewText(R.id.button, if (playing) "■" else "▶")
 		    setOnClickPendingIntent(R.id.context_name, pendingIntent_context)
 		    setOnClickPendingIntent(R.id.button, pendingIntent_play)
 		}

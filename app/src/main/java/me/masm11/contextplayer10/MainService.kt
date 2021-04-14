@@ -397,6 +397,6 @@ class MainService : Service() {
 	}
 	
 	if (needsUpdate)
-	    MainAppWidgetProvider.update(this)
+	    MainAppWidgetProvider.update(this, null, null, newName, newPlaying)
     }
 }
