@@ -126,7 +126,7 @@ class MainActivity: AppCompatActivity() {
 	val transaction = fragmentManager.beginTransaction()
 	if (!initial)
 	    transaction.addToBackStack(null)
-	transaction.replace(R.id.container, ContextFragment(fragmentManager))
+	transaction.replace(R.id.container, ContextFragment())
 	transaction.commit()
     }
     

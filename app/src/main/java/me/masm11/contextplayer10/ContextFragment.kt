@@ -53,7 +53,7 @@ import java.util.UUID
 
 import kotlinx.coroutines.*
 
-class ContextFragment(private val supportFragmentManager: FragmentManager): Fragment() {
+class ContextFragment: Fragment() {
     private val scope = CoroutineScope(Job() + Dispatchers.Main)
     private var binder: MainService.Binder? = null
     private lateinit var recyclerView: RecyclerView
@@ -118,8 +118,8 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 	    }
 	    adapter.setOnLongClickListener { c ->
 		if (!(getContext() as MainActivity).getContextListActionMode()) {
-		    val fragment = ActionSelectionDialogFragment(adapter, c, supportFragmentManager)
-		    fragment.show(supportFragmentManager, "action_selection")
+		    val fragment = ActionSelectionDialogFragment(adapter, c)
+		    fragment.show(getParentFragmentManager(), "action_selection")
 		    true
 		} else
 		    false
@@ -139,7 +139,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		val adapter = recyclerView.getAdapter() as ContextAdapter
 		adapter.reloadList()
 	    }
-	    fragment.show(supportFragmentManager, "action_selection")
+	    fragment.show(getParentFragmentManager(), "action_selection")
 	}
     }
     
@@ -289,8 +289,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
     
     class ActionSelectionDialogFragment(
 	private val adapter: ContextAdapter,
-	private val item: PlayContext,
-	private val supportFragmentManager: FragmentManager
+	private val item: PlayContext
     ) : DialogFragment() {
 	override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
 	    return activity?.let {
@@ -319,7 +318,7 @@ class ContextFragment(private val supportFragmentManager: FragmentManager): Frag
 		adapter.reloadList()
 	    }
 
-	    fragment.show(supportFragmentManager, "input_name")
+	    fragment.show(getParentFragmentManager(), "input_name")
 	}
 	
 	private fun deleteContext() {
