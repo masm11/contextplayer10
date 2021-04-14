@@ -143,6 +143,10 @@ class MainService : Service() {
 				Log.e("stopped", e)
 			    }
 			}
+			
+			withContext(Dispatchers.Main) {
+			    updateWidget()
+			}
 		    }
 		    Thread.sleep(100)
 		}
@@ -373,5 +377,26 @@ class MainService : Service() {
 	    watcher.interrupt()
 	    watcher.join()
 	}
+    }
+
+    private var widgetContextName: String? = null
+    private var widgetPlaying: Boolean = false
+    private fun updateWidget() {
+	val uuid = PlayContextStore.getPlayingUuid()
+	val ctxt = PlayContextStore.find(uuid)
+	val newName = ctxt.name
+	var needsUpdate = false
+	if (widgetContextName != newName) {
+	    widgetContextName = newName
+	    needsUpdate = true
+	}
+	val newPlaying = playing
+	if (widgetPlaying != newPlaying) {
+	    widgetPlaying = newPlaying
+	    needsUpdate = true
+	}
+	
+	if (needsUpdate)
+	    MainAppWidgetProvider.update(this)
     }
 }
